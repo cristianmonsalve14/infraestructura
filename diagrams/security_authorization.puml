@@ -1,0 +1,43 @@
+@startuml
+title Flujo de Autorizacion - Acceso a Recursos
+
+actor Usuario
+participant Frontend
+participant Gateway
+participant AcademicService
+database Database
+
+Usuario -> Frontend: Solicita ver calificaciones
+activate Frontend
+
+Frontend -> Gateway: GET /academic/calificaciones\nHeader: Authorization Bearer JWT
+activate Gateway
+
+Gateway -> Gateway: Valida JWT y permisos RBAC
+
+alt Token valido y rol autorizado
+    Gateway -> AcademicService: Enruta peticion con headers
+    activate AcademicService
+    
+    AcademicService -> AcademicService: Valida permisos adicionales
+    
+    AcademicService -> Database: SELECT calificaciones
+    activate Database
+    Database --> AcademicService: Lista de calificaciones
+    deactivate Database
+    
+    AcademicService --> Gateway: 200 OK con datos
+    deactivate AcademicService
+    
+    Gateway --> Frontend: 200 OK con datos
+    Frontend --> Usuario: Muestra calificaciones
+    
+else Token invalido o rol no autorizado
+    Gateway --> Frontend: 401/403 Error
+    Frontend --> Usuario: Muestra error o redirige a login
+end
+
+deactivate Gateway
+deactivate Frontend
+
+@enduml

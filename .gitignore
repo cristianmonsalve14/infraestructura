@@ -1,0 +1,9 @@
+# Infraestructura y documentación
+.DS_Store
+.idea/
+.vscode/
+ddl/*.log
+diagrams/*.svg
+diagrams/*.png
+*.tmp
+*.bak

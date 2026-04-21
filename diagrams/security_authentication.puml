@@ -1,0 +1,42 @@
+@startuml
+title Flujo de Autenticacion - Login
+
+actor Usuario
+participant Frontend
+participant Gateway
+participant AuthService
+database Database
+
+Usuario -> Frontend: Ingresa credenciales
+activate Frontend
+
+Frontend -> Gateway: POST /auth/login
+activate Gateway
+
+Gateway -> AuthService: Enruta peticion
+activate AuthService
+
+AuthService -> Database: SELECT usuario WHERE correo = ?
+activate Database
+Database --> AuthService: Retorna usuario
+deactivate Database
+
+AuthService -> AuthService: Valida password con BCrypt
+
+alt Credenciales validas
+    AuthService -> AuthService: Genera JWT Token
+    AuthService --> Gateway: 200 OK con Token
+    Gateway --> Frontend: 200 OK con Token
+    Frontend -> Frontend: Guarda token
+    Frontend --> Usuario: Redirige a Dashboard
+else Credenciales invalidas
+    AuthService --> Gateway: 401 Unauthorized
+    Gateway --> Frontend: 401 Unauthorized
+    Frontend --> Usuario: Muestra error
+end
+
+deactivate AuthService
+deactivate Gateway
+deactivate Frontend
+
+@enduml

@@ -1,0 +1,27 @@
+@startuml
+skinparam rectangle {
+  Shadowing false
+}
+actor "Frontend (Web / Móvil)" as FE
+
+rectangle "API Gateway\n(Spring Cloud Gateway)" as GW
+
+database "PostgreSQL (BD única)" as DB
+
+rectangle "auth-service\n(Autenticación / Usuarios)" as AUTH
+rectangle "academic-service\n(Gestión Académica)" as ACADEMIC
+rectangle "attendance-service\n(Asistencia y Anotaciones)" as ATTEND
+
+FE --> GW : "HTTP + JWT"
+GW --> AUTH : "/auth/* (validación JWT)"
+GW --> ACADEMIC : "REST API (JSON)"
+GW --> ATTEND : "REST API (JSON)"
+
+ACADEMIC --> DB : "Lectura / Escritura\n(tablas académicas)"
+ATTEND --> DB : "Lectura / Escritura\n(tablas de asistencia)"
+AUTH --> DB : "Lectura / Escritura\n(tablas de usuarios y roles)"
+
+note right of GW
+  Gateway: enrutamiento, validación JWT, rate-limit, CORS
+end note
+@enduml

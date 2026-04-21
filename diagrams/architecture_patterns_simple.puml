@@ -1,0 +1,122 @@
+@startuml patrones_diseno_simple
+title Patrones de Diseño - Plataforma Libro de Clases Digital
+
+skinparam shadowing false
+skinparam defaultFontSize 14
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 100
+
+' ============================================
+' CAPA 1: MICROSERVICIOS
+' ============================================
+package "MICROSERVICIOS" #E3F2FD {
+    rectangle "Auth\nService" as auth #BBDEFB
+    rectangle "Academic\nService" as academic #BBDEFB
+    rectangle "Attendance\nService" as attendance #BBDEFB
+    rectangle "Messaging\nService" as messaging #BBDEFB
+}
+
+' Espaciado invisible
+auth -[hidden]right-> academic
+academic -[hidden]right-> attendance
+attendance -[hidden]right-> messaging
+
+' ============================================
+' CAPA 2: PATRONES DE DISEÑO
+' ============================================
+
+' PATRÓN 1: REPOSITORY
+package "PATRÓN 1: REPOSITORY" #FFF9C4 {
+    rectangle "Spring Data JPA" as repo #FFF59D {
+        [findByCursoId()]
+        [findByEstudiante()]
+        [save() / delete()]
+    }
+}
+
+note top of repo
+  <b>Abstrae acceso a datos</b>
+  ✓ Sin SQL manual
+  ✓ Fácil de testear
+end note
+
+' PATRÓN 2: FACTORY METHOD
+package "PATRÓN 2: FACTORY METHOD" #E1BEE7 {
+    rectangle "Factories" as factory #CE93D8 {
+        [AnotacionFactory]
+        [EstudianteFactory]
+        [NotificacionFactory]
+    }
+}
+
+note top of factory
+  <b>Centraliza creación</b>
+  ✓ DTO → Entity
+  ✓ Extensible
+end note
+
+' PATRÓN 3: CIRCUIT BREAKER
+package "PATRÓN 3: CIRCUIT BREAKER" #FFCCBC {
+    rectangle "Resilience4j" as circuit #FFAB91 {
+        [@CircuitBreaker]
+        [Fallback Logic]
+        [CLOSED/OPEN/HALF-OPEN]
+    }
+}
+
+note top of circuit
+  <b>Evita fallos en cascada</b>
+  ✓ Protege servicios
+  ✓ Auto-recuperación
+end note
+
+' Alineación horizontal de patrones
+repo -[hidden]right-> factory
+factory -[hidden]right-> circuit
+
+' ============================================
+' CAPA 3: BASE DE DATOS
+' ============================================
+database "PostgreSQL" as db #CFD8DC
+
+' ============================================
+' CONEXIONES - GRUPO 1: REPOSITORY
+' ============================================
+auth -[#FBC02D,thickness=2]down-> repo : "   usa   "
+academic -[#FBC02D,thickness=2]down-> repo : "   usa   "
+attendance -[#FBC02D,thickness=2]down-> repo : "   usa   "
+messaging -[#FBC02D,thickness=2]down-> repo : "   usa   "
+
+' ============================================
+' CONEXIONES - GRUPO 2: FACTORY METHOD
+' ============================================
+auth -[#8E24AA,thickness=2,dashed]down-> factory : "   usa   "
+academic -[#8E24AA,thickness=2,dashed]down-> factory : "   usa   "
+attendance -[#8E24AA,thickness=2,dashed]down-> factory : "   usa   "
+
+' ============================================
+' CONEXIONES - GRUPO 3: CIRCUIT BREAKER
+' ============================================
+academic -[#FF5722,thickness=3,dotted]down-> circuit : " protegido "
+attendance -[#FF5722,thickness=3,dotted]down-> circuit : " protegido "
+messaging -[#FF5722,thickness=3,dotted]down-> circuit : " protegido "
+
+' ============================================
+' CONEXIÓN A BASE DE DATOS
+' ============================================
+repo -[#37474F,thickness=4]down-> db : "  accede a  "
+
+' ============================================
+' LEYENDA
+' ============================================
+legend bottom right
+  <b>Tipos de Conexión:</b>
+  <color:#FBC02D>━━━━</color> Repository Pattern
+  <color:#8E24AA>╌╌╌╌</color> Factory Method
+  <color:#FF5722>┄┄┄┄</color> Circuit Breaker
+  <color:#37474F>━━━━</color> Acceso a datos
+endlegend
+
+@enduml
