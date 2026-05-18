@@ -1,0 +1,18 @@
+REPOSITORIO PRINCIPAL
+https://github.com/cristianmonsalve14/libro-de-clases-digital
+
+FRONTEND
+https://github.com/cristianmonsalve14/frontend-react
+→ Aplicación React con gestión académica completa, autenticación JWT y consumo de microservicios
+
+ACADEMIC SERVICE
+https://github.com/cristianmonsalve14/academicService
+→ Microservicio encargado de estudiantes, cursos, asignaturas, matrículas y evaluaciones
+
+AUTH SERVICE
+https://github.com/cristianmonsalve14/authService
+→ Microservicio de autenticación y generación de tokens JWT
+
+INFRAESTRUCTURA / DOCUMENTACIÓN
+https://github.com/tuUsuario/infraestructura
+→ Documentación del proyecto (arquitectura, patrones, branching)
