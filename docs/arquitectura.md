@@ -18,12 +18,15 @@ Este documento incluye tanto la implementación actual como la proyección compl
 
 - auth-service: autenticación y gestión de usuarios (emite JWT).
 - academic-service: gestión académica (cursos, asignaturas, matrículas, evaluaciones).
+- attendance-service: sesiones de clase, asistencias y anotaciones de conducta.
+- apiGetaway: enrutamiento centralizado hacia microservicios.
 - frontend-react: interfaz de usuario.
 
-### 🚧 Planificados (fase final del proyecto)
+### 🚧 Pendiente
 
-- attendance-service: sesiones, registro de asistencias y anotaciones de conducta.
-- API Gateway: punto de entrada centralizado (validación JWT, routing).
+- Scripts y creación de bases de datos separadas por microservicio.
+- Validación JWT centralizada en API Gateway.
+- Circuit Breaker (Resilience4j).
 
 ---
 

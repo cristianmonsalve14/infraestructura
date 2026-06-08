@@ -70,8 +70,12 @@ mvn spring-boot:run
 
 Puertos:
 
-- authService → http://localhost:8081  
-- academicService → http://localhost:8082  
+- apiGetaway → http://localhost:8090  
+- authService → http://localhost:8091  
+- academicService → http://localhost:8092  
+- attendanceService → http://localhost:8093  
+
+Ver detalle en `docs/puertos.md`.
 
 ---
 
@@ -84,23 +88,33 @@ npm run dev
 
 Aplicación disponible en:
 
-http://localhost:5173  
+http://localhost:8094  
+
+Variable de entorno (`.env`):
+
+VITE_API_URL=http://localhost:8090
 
 ---
 
 ## 🗄️ Base de Datos
 
-1. Crear base de datos en PostgreSQL (ej: libro_clases_db)  
-2. Ejecutar scripts SQL del proyecto  
-3. Configurar credenciales en:
+Arquitectura **database per service** (una BD por microservicio):
 
-src/main/resources/application.properties
+| Base de datos | Servicio |
+|---|---|
+| `librodigital_auth` | authService |
+| `librodigital_academic` | academicService |
+| `librodigital_attendance` | attendanceService |
 
-Ejemplo:
+Scripts en `ddl/` — ver `ddl/README.md` para instalación paso a paso.
 
-spring.datasource.url=jdbc:postgresql://localhost:5432/libro_clases_db  
-spring.datasource.username=postgres  
-spring.datasource.password=tu_password  
+Configurar credenciales en cada `application.properties`:
+
+```properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/librodigital_auth
+spring.datasource.username=postgres
+spring.datasource.password=tu_password
+```
 
 ---
 
@@ -173,6 +187,12 @@ Incluye autenticación segura con JWT y separación por microservicios.
 La documentación completa del sistema se encuentra en la carpeta `docs/` del repositorio.
 
 ### 📄 Contenido de la carpeta docs/
+
+- **puertos.md**  
+Mapa oficial de puertos del ecosistema (bloque 8090–8099).
+
+- **bases_de_datos.md**  
+Estrategia database per service, inventario de tablas y guía de configuración.
 
 - **repositorios.txt**  
 Contiene los enlaces a los repositorios del proyecto (frontend y microservicios).

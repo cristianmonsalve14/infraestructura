@@ -1,0 +1,212 @@
+{
+  "info": {
+    "name": "Libro Digital — API Gateway",
+    "description": "Colección para probar auth, academic y attendance vía apiGetaway (:8090).\n\nUsuario de prueba:\n- username: postman_test\n- password: test1234\n\n1. Ejecutar 'Login' para guardar el token automáticamente.\n2. El resto de requests usa {{token}} en Authorization.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8090" },
+    { "key": "token", "value": "" },
+    { "key": "username", "value": "postman_test" },
+    { "key": "password", "value": "test1234" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"nuevo_usuario\",\n  \"password\": \"test1234\",\n  \"email\": \"nuevo@test.com\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/register"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "  pm.collectionVariables.set('token', json.accessToken);",
+                  "  pm.test('Token guardado', () => pm.expect(json.accessToken).to.be.a('string'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Academic",
+      "item": [
+        {
+          "name": "List Students",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/students"
+          }
+        },
+        {
+          "name": "List Courses",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/courses"
+          }
+        },
+        {
+          "name": "List Teachers",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/teachers"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Attendance — Sessions",
+      "item": [
+        {
+          "name": "List Sessions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/sessions"
+          }
+        },
+        {
+          "name": "Create Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": 17,\n  \"subjectId\": 2,\n  \"teacherId\": 1,\n  \"sessionDate\": \"2026-06-08\",\n  \"topic\": \"Repaso unidad 1\",\n  \"sessionStatus\": \"ABIERTA\"\n}"
+            },
+            "url": "{{baseUrl}}/sessions"
+          }
+        },
+        {
+          "name": "Get Session by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/sessions/1"
+          }
+        },
+        {
+          "name": "Sessions by Course",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/sessions/course/17"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Attendance — Records",
+      "item": [
+        {
+          "name": "List Attendances",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/attendances"
+          }
+        },
+        {
+          "name": "Create Attendance",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": 1,\n  \"studentId\": 2,\n  \"status\": \"PRESENTE\",\n  \"observations\": \"Llegó a tiempo\"\n}"
+            },
+            "url": "{{baseUrl}}/attendances"
+          }
+        },
+        {
+          "name": "Attendances by Session",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/attendances/session/1"
+          }
+        },
+        {
+          "name": "Attendances by Student",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/attendances/student/2"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Attendance — Annotations",
+      "item": [
+        {
+          "name": "List Annotations",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/annotations"
+          }
+        },
+        {
+          "name": "Create Annotation",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": 2,\n  \"teacherId\": 1,\n  \"annotationDate\": \"2026-06-08\",\n  \"type\": \"NEGATIVA\",\n  \"description\": \"Uso de celular en clase\"\n}"
+            },
+            "url": "{{baseUrl}}/annotations"
+          }
+        },
+        {
+          "name": "Annotations by Student",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/annotations/student/2"
+          }
+        }
+      ]
+    }
+  ]
+}

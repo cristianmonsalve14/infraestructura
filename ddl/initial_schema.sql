@@ -1,8 +1,19 @@
 -- =====================================================
--- 📚 LIBRO DE CLASES DIGITAL - SCRIPT DE BASE DE DATOS
+-- ⚠️ SCRIPT LEGADO — NO USAR EN MICROSERVICIOS
+-- =====================================================
+-- Este archivo corresponde al diseño monolítico (una sola BD libro_clases).
+-- La arquitectura actual usa 3 bases separadas. Ver:
+--   ddl/README.md
+--   ddl/00_create_databases.sql
+--   ddl/auth_schema.sql
+--   ddl/academic_schema.sql
+--   ddl/attendance_schema.sql
 -- =====================================================
 --
--- 🧾 INSTRUCCIONES DE USO
+-- 📚 LIBRO DE CLASES DIGITAL - SCRIPT DE BASE DE DATOS (LEGADO)
+-- =====================================================
+--
+-- 🧾 INSTRUCCIONES DE USO (LEGADO)
 --
 -- 1. Crear una base de datos en PostgreSQL:
 --    CREATE DATABASE libro_clases;
