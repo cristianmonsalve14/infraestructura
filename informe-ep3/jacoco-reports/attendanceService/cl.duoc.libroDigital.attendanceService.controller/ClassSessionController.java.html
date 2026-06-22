@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ClassSessionController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">attendanceService</a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.attendanceService.controller</a> &gt; <span class="el_source">ClassSessionController.java</span></div><h1>ClassSessionController.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.attendanceService.controller;
+
+import cl.duoc.libroDigital.attendanceService.dto.ClassSessionDTO;
+import cl.duoc.libroDigital.attendanceService.model.ClassSession;
+import cl.duoc.libroDigital.attendanceService.security.AttendanceAccessService;
+import cl.duoc.libroDigital.attendanceService.service.AttendanceCatalogService;
+import cl.duoc.libroDigital.attendanceService.service.ClassSessionService;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping(&quot;/sessions&quot;)
+public class ClassSessionController {
+
+    private final ClassSessionService classSessionService;
+    private final AttendanceAccessService access;
+    private final AttendanceCatalogService catalogs;
+
+<span class="fc" id="L21">    public ClassSessionController(</span>
+            ClassSessionService classSessionService,
+            AttendanceAccessService access,
+            AttendanceCatalogService catalogs) {
+<span class="fc" id="L25">        this.classSessionService = classSessionService;</span>
+<span class="fc" id="L26">        this.access = access;</span>
+<span class="fc" id="L27">        this.catalogs = catalogs;</span>
+<span class="fc" id="L28">    }</span>
+
+    private ClassSessionDTO toDTO(ClassSession session) {
+<span class="fc" id="L31">        ClassSessionDTO dto = new ClassSessionDTO();</span>
+<span class="fc" id="L32">        dto.setId(session.getId());</span>
+<span class="fc" id="L33">        dto.setCourseId(session.getCourseId());</span>
+<span class="fc" id="L34">        dto.setSubjectId(session.getSubjectId());</span>
+<span class="fc" id="L35">        dto.setTeacherId(session.getTeacherId());</span>
+<span class="fc" id="L36">        dto.setSessionDate(session.getSessionDate());</span>
+<span class="fc" id="L37">        dto.setTopic(session.getTopic());</span>
+<span class="fc" id="L38">        dto.setSessionStatus(catalogs.sessionStatusCode(session.getSessionStatusId()));</span>
+<span class="fc" id="L39">        dto.setCreatedAt(session.getCreatedAt());</span>
+<span class="fc" id="L40">        dto.setUpdatedAt(session.getUpdatedAt());</span>
+<span class="fc" id="L41">        return dto;</span>
+    }
+
+    private ClassSession toEntity(ClassSessionDTO dto) {
+<span class="fc" id="L45">        ClassSession session = new ClassSession();</span>
+<span class="fc" id="L46">        session.setId(dto.getId());</span>
+<span class="fc" id="L47">        session.setCourseId(dto.getCourseId());</span>
+<span class="fc" id="L48">        session.setSubjectId(dto.getSubjectId());</span>
+<span class="fc" id="L49">        session.setTeacherId(dto.getTeacherId());</span>
+<span class="fc" id="L50">        session.setSessionDate(dto.getSessionDate());</span>
+<span class="fc" id="L51">        session.setTopic(dto.getTopic());</span>
+<span class="fc" id="L52">        session.setSessionStatusId(catalogs.sessionStatusId(dto.getSessionStatus()));</span>
+<span class="fc" id="L53">        return session;</span>
+    }
+
+    @PostMapping
+    public ClassSessionDTO createSession(@RequestBody ClassSessionDTO dto) {
+<span class="fc" id="L58">        ClassSession entity = toEntity(dto);</span>
+<span class="pc bpc" id="L59" title="2 of 4 branches missed.">        if (access.isTeacher() &amp;&amp; !access.isAdmin()) {</span>
+<span class="fc" id="L60">            entity.setTeacherId(access.requireTeacherId());</span>
+        }
+<span class="fc" id="L62">        access.ensureCanManageSession(entity);</span>
+<span class="fc" id="L63">        return toDTO(classSessionService.createSession(entity));</span>
+    }
+
+    @GetMapping
+    public List&lt;ClassSessionDTO&gt; getAllSessions() {
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">        if (access.isAdmin()) {</span>
+<span class="nc" id="L69">            return classSessionService.getAllSessions()</span>
+<span class="nc" id="L70">                    .stream()</span>
+<span class="nc" id="L71">                    .map(this::toDTO)</span>
+<span class="nc" id="L72">                    .collect(Collectors.toList());</span>
+        }
+<span class="fc" id="L74">        Long teacherId = access.requireTeacherId();</span>
+<span class="fc" id="L75">        return classSessionService.getSessionsByTeacher(teacherId)</span>
+<span class="fc" id="L76">                .stream()</span>
+<span class="fc" id="L77">                .map(this::toDTO)</span>
+<span class="fc" id="L78">                .collect(Collectors.toList());</span>
+    }
+
+    @GetMapping(&quot;/{id}&quot;)
+    public ClassSessionDTO getSession(@PathVariable Long id) {
+<span class="nc" id="L83">        access.ensureCanAccessSession(id);</span>
+<span class="nc" id="L84">        return classSessionService.getSessionById(id)</span>
+<span class="nc" id="L85">                .map(this::toDTO)</span>
+<span class="nc" id="L86">                .orElse(null);</span>
+    }
+
+    @GetMapping(&quot;/course/{courseId}&quot;)
+    public List&lt;ClassSessionDTO&gt; getSessionsByCourse(@PathVariable Long courseId) {
+<span class="fc" id="L91">        List&lt;ClassSession&gt; sessions = classSessionService.getSessionsByCourse(courseId);</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">        if (!access.isAdmin()) {</span>
+<span class="fc" id="L93">            Long teacherId = access.requireTeacherId();</span>
+<span class="fc" id="L94">            sessions = sessions.stream()</span>
+<span class="fc" id="L95">                    .filter(session -&gt; teacherId.equals(session.getTeacherId()))</span>
+<span class="fc" id="L96">                    .collect(Collectors.toList());</span>
+        }
+<span class="fc" id="L98">        return sessions.stream().map(this::toDTO).collect(Collectors.toList());</span>
+    }
+
+    @GetMapping(&quot;/subject/{subjectId}&quot;)
+    public List&lt;ClassSessionDTO&gt; getSessionsBySubject(@PathVariable Long subjectId) {
+<span class="nc" id="L103">        List&lt;ClassSession&gt; sessions = classSessionService.getSessionsBySubject(subjectId);</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">        if (!access.isAdmin()) {</span>
+<span class="nc" id="L105">            Long teacherId = access.requireTeacherId();</span>
+<span class="nc" id="L106">            sessions = sessions.stream()</span>
+<span class="nc" id="L107">                    .filter(session -&gt; teacherId.equals(session.getTeacherId()))</span>
+<span class="nc" id="L108">                    .collect(Collectors.toList());</span>
+        }
+<span class="nc" id="L110">        return sessions.stream().map(this::toDTO).collect(Collectors.toList());</span>
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    public ClassSessionDTO updateSession(@PathVariable Long id, @RequestBody ClassSessionDTO dto) {
+<span class="nc" id="L115">        access.ensureCanAccessSession(id);</span>
+<span class="nc" id="L116">        ClassSession entity = toEntity(dto);</span>
+<span class="nc bnc" id="L117" title="All 4 branches missed.">        if (access.isTeacher() &amp;&amp; !access.isAdmin()) {</span>
+<span class="nc" id="L118">            entity.setTeacherId(access.requireTeacherId());</span>
+        }
+<span class="nc" id="L120">        access.ensureCanManageSession(entity);</span>
+<span class="nc" id="L121">        return toDTO(classSessionService.updateSession(id, entity));</span>
+    }
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    public void deleteSession(@PathVariable Long id) {
+<span class="nc" id="L126">        access.requireTeacherForPedagogicalWrite();</span>
+<span class="nc" id="L127">        access.ensureCanAccessSession(id);</span>
+<span class="nc" id="L128">        classSessionService.deleteSession(id);</span>
+<span class="nc" id="L129">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

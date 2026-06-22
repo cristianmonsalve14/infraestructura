@@ -2,8 +2,8 @@
 .DS_Store
 .idea/
 .vscode/
+out/
 ddl/*.log
 diagrams/*.svg
-diagrams/*.png
 *.tmp
 *.bak

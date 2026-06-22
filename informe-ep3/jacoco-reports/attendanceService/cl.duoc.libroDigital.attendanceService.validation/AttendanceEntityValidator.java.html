@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AttendanceEntityValidator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">attendanceService</a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.attendanceService.validation</a> &gt; <span class="el_source">AttendanceEntityValidator.java</span></div><h1>AttendanceEntityValidator.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.attendanceService.validation;
+
+import cl.duoc.libroDigital.attendanceService.exception.BadRequestException;
+import cl.duoc.libroDigital.attendanceService.exception.ConflictException;
+import cl.duoc.libroDigital.attendanceService.model.Annotation;
+import cl.duoc.libroDigital.attendanceService.model.ClassSession;
+import cl.duoc.libroDigital.attendanceService.repository.ClassSessionRepository;
+
+import org.springframework.stereotype.Component;
+
+import java.time.LocalDate;
+import java.util.Set;
+
+@Component
+public class AttendanceEntityValidator {
+
+<span class="fc" id="L17">    private static final Set&lt;Short&gt; VALID_ANNOTATION_TYPES = Set.of((short) 1, (short) 2);</span>
+
+    private final ClassSessionRepository classSessionRepository;
+
+<span class="fc" id="L21">    public AttendanceEntityValidator(ClassSessionRepository classSessionRepository) {</span>
+<span class="fc" id="L22">        this.classSessionRepository = classSessionRepository;</span>
+<span class="fc" id="L23">    }</span>
+
+    public void validateSessionForSave(ClassSession session, Long excludeId) {
+<span class="fc bfc" id="L26" title="All 2 branches covered.">        if (session.getSubjectId() == null) {</span>
+<span class="fc" id="L27">            throw new BadRequestException(&quot;La asignatura es obligatoria&quot;);</span>
+        }
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        if (session.getCourseId() == null) {</span>
+<span class="fc" id="L30">            throw new BadRequestException(&quot;El curso es obligatorio&quot;);</span>
+        }
+<span class="fc bfc" id="L32" title="All 4 branches covered.">        if (session.getTeacherId() == null || session.getTeacherId() &lt;= 0) {</span>
+<span class="fc" id="L33">            throw new BadRequestException(&quot;El docente es obligatorio&quot;);</span>
+        }
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        if (session.getSessionDate() == null) {</span>
+<span class="fc" id="L36">            throw new BadRequestException(&quot;La fecha de la sesión es obligatoria&quot;);</span>
+        }
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (session.getSessionDate().isAfter(LocalDate.now())) {</span>
+<span class="fc" id="L39">            throw new BadRequestException(&quot;La fecha de la sesión no puede ser futura&quot;);</span>
+        }
+
+<span class="fc" id="L42">        classSessionRepository.findBySubjectIdAndSessionDate(session.getSubjectId(), session.getSessionDate())</span>
+<span class="fc" id="L43">                .stream()</span>
+<span class="pc bpc" id="L44" title="1 of 4 branches missed.">                .filter(existing -&gt; excludeId == null || !existing.getId().equals(excludeId))</span>
+<span class="fc" id="L45">                .findAny()</span>
+<span class="fc" id="L46">                .ifPresent(existing -&gt; {</span>
+<span class="fc" id="L47">                    throw new ConflictException(&quot;Ya existe una sesión de esta asignatura en esa fecha&quot;);</span>
+                });
+<span class="fc" id="L49">    }</span>
+
+    public void validateAnnotationForSave(Annotation annotation) {
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        if (annotation.getStudentId() == null) {</span>
+<span class="fc" id="L53">            throw new BadRequestException(&quot;El estudiante es obligatorio&quot;);</span>
+        }
+<span class="fc bfc" id="L55" title="All 4 branches covered.">        if (annotation.getTeacherId() == null || annotation.getTeacherId() &lt;= 0) {</span>
+<span class="fc" id="L56">            throw new BadRequestException(&quot;El docente es obligatorio&quot;);</span>
+        }
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        if (annotation.getAnnotationDate() == null) {</span>
+<span class="fc" id="L59">            throw new BadRequestException(&quot;La fecha de la anotación es obligatoria&quot;);</span>
+        }
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        if (annotation.getAnnotationDate().isAfter(LocalDate.now())) {</span>
+<span class="fc" id="L62">            throw new BadRequestException(&quot;La fecha de la anotación no puede ser futura&quot;);</span>
+        }
+<span class="fc bfc" id="L64" title="All 4 branches covered.">        if (annotation.getAnnotationTypeId() == null || !VALID_ANNOTATION_TYPES.contains(annotation.getAnnotationTypeId())) {</span>
+<span class="fc" id="L65">            throw new BadRequestException(&quot;El tipo de anotación es inválido. Valores permitidos: POSITIVA, NEGATIVA&quot;);</span>
+        }
+<span class="pc bpc" id="L67" title="1 of 4 branches missed.">        if (annotation.getDescription() == null || annotation.getDescription().isBlank()) {</span>
+<span class="fc" id="L68">            throw new BadRequestException(&quot;La descripción de la anotación es obligatoria&quot;);</span>
+        }
+<span class="fc" id="L70">        annotation.setDescription(annotation.getDescription().trim());</span>
+<span class="fc" id="L71">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

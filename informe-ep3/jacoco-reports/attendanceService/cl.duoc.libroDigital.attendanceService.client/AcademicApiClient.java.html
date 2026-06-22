@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AcademicApiClient.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">attendanceService</a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.attendanceService.client</a> &gt; <span class="el_source">AcademicApiClient.java</span></div><h1>AcademicApiClient.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.attendanceService.client;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
+
+import java.util.Map;
+import java.util.Optional;
+
+@Component
+public class AcademicApiClient {
+
+    private final RestClient restClient;
+    private final String academicBaseUrl;
+
+<span class="fc" id="L16">    public AcademicApiClient(@Value(&quot;${academic.service.url:http://localhost:8092}&quot;) String academicBaseUrl) {</span>
+<span class="fc" id="L17">        this.restClient = RestClient.create();</span>
+<span class="fc" id="L18">        this.academicBaseUrl = academicBaseUrl.replaceAll(&quot;/$&quot;, &quot;&quot;);</span>
+<span class="fc" id="L19">    }</span>
+
+    public Optional&lt;Long&gt; getCurrentTeacherId(String authorizationHeader) {
+<span class="pc bpc" id="L22" title="1 of 4 branches missed.">        if (authorizationHeader == null || authorizationHeader.isBlank()) {</span>
+<span class="fc" id="L23">            return Optional.empty();</span>
+        }
+        try {
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L27">            Map&lt;String, Object&gt; body = restClient.get()</span>
+<span class="nc" id="L28">                    .uri(academicBaseUrl + &quot;/teachers/me&quot;)</span>
+<span class="nc" id="L29">                    .header(&quot;Authorization&quot;, authorizationHeader)</span>
+<span class="nc" id="L30">                    .retrieve()</span>
+<span class="nc" id="L31">                    .body(Map.class);</span>
+<span class="nc bnc" id="L32" title="All 4 branches missed.">            if (body == null || body.get(&quot;id&quot;) == null) {</span>
+<span class="nc" id="L33">                return Optional.empty();</span>
+            }
+<span class="nc" id="L35">            return Optional.of(((Number) body.get(&quot;id&quot;)).longValue());</span>
+<span class="nc" id="L36">        } catch (Exception ex) {</span>
+<span class="nc" id="L37">            return Optional.empty();</span>
+        }
+    }
+
+    public Optional&lt;String&gt; getStudentName(String authorizationHeader, Long studentId) {
+<span class="pc bpc" id="L42" title="1 of 6 branches missed.">        if (authorizationHeader == null || authorizationHeader.isBlank() || studentId == null) {</span>
+<span class="fc" id="L43">            return Optional.empty();</span>
+        }
+        try {
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L47">            Map&lt;String, Object&gt; body = restClient.get()</span>
+<span class="nc" id="L48">                    .uri(academicBaseUrl + &quot;/students/{id}&quot;, studentId)</span>
+<span class="nc" id="L49">                    .header(&quot;Authorization&quot;, authorizationHeader)</span>
+<span class="nc" id="L50">                    .retrieve()</span>
+<span class="nc" id="L51">                    .body(Map.class);</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">            if (body == null) {</span>
+<span class="nc" id="L53">                return Optional.empty();</span>
+            }
+<span class="nc bnc" id="L55" title="All 2 branches missed.">            String firstName = body.get(&quot;firstName&quot;) != null ? body.get(&quot;firstName&quot;).toString().trim() : &quot;&quot;;</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">            String lastName = body.get(&quot;lastName&quot;) != null ? body.get(&quot;lastName&quot;).toString().trim() : &quot;&quot;;</span>
+<span class="nc" id="L57">            String fullName = (firstName + &quot; &quot; + lastName).trim();</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">            return fullName.isBlank() ? Optional.empty() : Optional.of(fullName);</span>
+<span class="nc" id="L59">        } catch (Exception ex) {</span>
+<span class="nc" id="L60">            return Optional.empty();</span>
+        }
+    }
+
+    public Optional&lt;String&gt; getSubjectName(String authorizationHeader, Long subjectId) {
+<span class="pc bpc" id="L65" title="1 of 6 branches missed.">        if (authorizationHeader == null || authorizationHeader.isBlank() || subjectId == null) {</span>
+<span class="fc" id="L66">            return Optional.empty();</span>
+        }
+        try {
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L70">            Map&lt;String, Object&gt; body = restClient.get()</span>
+<span class="nc" id="L71">                    .uri(academicBaseUrl + &quot;/subjects/{id}&quot;, subjectId)</span>
+<span class="nc" id="L72">                    .header(&quot;Authorization&quot;, authorizationHeader)</span>
+<span class="nc" id="L73">                    .retrieve()</span>
+<span class="nc" id="L74">                    .body(Map.class);</span>
+<span class="nc bnc" id="L75" title="All 4 branches missed.">            if (body == null || body.get(&quot;subjectName&quot;) == null) {</span>
+<span class="nc" id="L76">                return Optional.empty();</span>
+            }
+<span class="nc" id="L78">            String name = body.get(&quot;subjectName&quot;).toString().trim();</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">            return name.isBlank() ? Optional.empty() : Optional.of(name);</span>
+<span class="nc" id="L80">        } catch (Exception ex) {</span>
+<span class="nc" id="L81">            return Optional.empty();</span>
+        }
+    }
+
+    public boolean canReadStudent(String authorizationHeader, Long studentId) {
+<span class="pc bpc" id="L86" title="1 of 6 branches missed.">        if (authorizationHeader == null || authorizationHeader.isBlank() || studentId == null) {</span>
+<span class="fc" id="L87">            return false;</span>
+        }
+        try {
+<span class="nc" id="L90">            restClient.get()</span>
+<span class="nc" id="L91">                    .uri(academicBaseUrl + &quot;/students/{id}&quot;, studentId)</span>
+<span class="nc" id="L92">                    .header(&quot;Authorization&quot;, authorizationHeader)</span>
+<span class="nc" id="L93">                    .retrieve()</span>
+<span class="nc" id="L94">                    .toBodilessEntity();</span>
+<span class="nc" id="L95">            return true;</span>
+<span class="nc" id="L96">        } catch (Exception ex) {</span>
+<span class="nc" id="L97">            return false;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

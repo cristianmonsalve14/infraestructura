@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PhoneUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.academicService.util</a> &gt; <span class="el_source">PhoneUtil.java</span></div><h1>PhoneUtil.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.academicService.util;
+
+import cl.duoc.libroDigital.academicService.exception.BadRequestException;
+
+public final class PhoneUtil {
+
+    private PhoneUtil() {
+    }
+
+    public static String normalize(String phone) {
+<span class="fc bfc" id="L11" title="All 2 branches covered.">        if (phone == null) {</span>
+<span class="fc" id="L12">            return null;</span>
+        }
+<span class="fc" id="L14">        String digits = phone.replaceAll(&quot;\\D&quot;, &quot;&quot;);</span>
+<span class="pc bpc" id="L15" title="1 of 4 branches missed.">        if (digits.startsWith(&quot;56&quot;) &amp;&amp; digits.length() &gt; 9) {</span>
+<span class="fc" id="L16">            digits = digits.substring(2);</span>
+        }
+<span class="fc" id="L18">        return digits;</span>
+    }
+
+    public static String normalizeAndValidateRequired(String phone) {
+<span class="pc bpc" id="L22" title="1 of 4 branches missed.">        if (phone == null || phone.isBlank()) {</span>
+<span class="fc" id="L23">            throw new BadRequestException(&quot;El teléfono es obligatorio&quot;);</span>
+        }
+<span class="fc" id="L25">        return normalizeAndValidateOptional(phone);</span>
+    }
+
+    public static String normalizeAndValidateOptional(String phone) {
+<span class="fc bfc" id="L29" title="All 4 branches covered.">        if (phone == null || phone.isBlank()) {</span>
+<span class="fc" id="L30">            return null;</span>
+        }
+<span class="fc" id="L32">        String digits = normalize(phone);</span>
+<span class="pc bpc" id="L33" title="1 of 4 branches missed.">        if (digits.length() &lt; 8 || digits.length() &gt; 9) {</span>
+<span class="fc" id="L34">            throw new BadRequestException(&quot;El teléfono debe tener 8 o 9 dígitos (ej: 912345678)&quot;);</span>
+        }
+<span class="pc bpc" id="L36" title="2 of 6 branches missed.">        if (digits.length() == 9 &amp;&amp; digits.charAt(0) != '9' &amp;&amp; digits.charAt(0) != '2') {</span>
+<span class="nc" id="L37">            throw new BadRequestException(&quot;El teléfono móvil debe comenzar con 9 o fijo con 2&quot;);</span>
+        }
+<span class="fc" id="L39">        return digits;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

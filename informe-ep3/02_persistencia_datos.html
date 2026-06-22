@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>02_persistencia_datos</title>
+  <style>
+  @page { margin: 18mm 16mm; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: #1f2937;
+    line-height: 1.55;
+    font-size: 11pt;
+    max-width: 100%;
+  }
+  h1 { color: #1e3a8a; font-size: 22pt; border-bottom: 2px solid #dbeafe; padding-bottom: 8px; }
+  h2 { color: #1d4ed8; font-size: 15pt; margin-top: 1.4em; }
+  h3 { color: #2563eb; font-size: 12.5pt; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 10pt; }
+  th, td { border: 1px solid #d1d5db; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #eff6ff; }
+  code { background: #f3f4f6; padding: 1px 4px; border-radius: 4px; font-size: 9.5pt; }
+  pre { background: #111827; color: #f9fafb; padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 9pt; }
+  pre code { background: transparent; color: inherit; }
+  img { max-width: 100%; height: auto; margin: 12px 0; }
+  blockquote { border-left: 4px solid #93c5fd; margin: 12px 0; padding: 4px 12px; color: #4b5563; }
+  hr { border: none; border-top: 1px solid #e5e7eb; margin: 20px 0; }
+</style>
+</head>
+<body><h1>02 — Descripción de la Persistencia de Datos</h1>
+<p><strong>Proyecto:</strong> Plataforma Libro de Clases Digital<br><strong>Asignatura:</strong> DSY1106 — Desarrollo Fullstack III<br><strong>Evaluación:</strong> Parcial N°3 — Encargo<br><strong>Equipo:</strong> Cristian Monsalve / Héctor Olivares  </p>
+<hr>
+<h2>1. Estrategia general</h2>
+<p>El proyecto adopta el patrón <strong>Database per Service</strong>: cada microservicio posee su propia base de datos PostgreSQL, gestionada de forma independiente. Esto garantiza:</p>
+<ul>
+<li><strong>Autonomía</strong> de cada dominio (auth, académico, asistencia)</li>
+<li><strong>Escalabilidad</strong> independiente por servicio</li>
+<li><strong>Aislamiento de fallos</strong> entre dominios</li>
+<li><strong>Evolución de esquema</strong> sin bloquear otros servicios</li>
+</ul>
+<p>No existen <strong>foreign keys entre bases distintas</strong>. Las relaciones cruzadas (por ejemplo, <code>student_id</code> en attendance que referencia un estudiante en academic) se resuelven mediante <strong>identificadores lógicos</strong> validados en la capa de servicio o vía llamadas REST.</p>
+<hr>
+<h2>2. Inventario de bases de datos</h2>
+<table>
+<thead>
+<tr>
+<th>Base de datos</th>
+<th>Microservicio</th>
+<th>Puerto</th>
+<th>Script DDL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>librodigital_auth</code></td>
+<td>authService</td>
+<td>8091</td>
+<td><code>infraestructura/ddl/auth_schema.sql</code></td>
+</tr>
+<tr>
+<td><code>librodigital_academic</code></td>
+<td>academicService</td>
+<td>8092</td>
+<td><code>infraestructura/ddl/academic_schema.sql</code></td>
+</tr>
+<tr>
+<td><code>librodigital_attendance</code></td>
+<td>attendanceService</td>
+<td>8093</td>
+<td><code>infraestructura/ddl/attendance_schema.sql</code></td>
+</tr>
+</tbody></table>
+<p>Creación inicial de las tres bases:</p>
+<pre><code class="language-sql">-- infraestructura/ddl/00_create_databases.sql
+CREATE DATABASE librodigital_auth;
+CREATE DATABASE librodigital_academic;
+CREATE DATABASE librodigital_attendance;
+</code></pre>
+<hr>
+<h2>3. Tecnología de persistencia: Spring Data JPA + Hibernate</h2>
+<h3>3.1 Configuración por microservicio</h3>
+<p>Cada servicio define su conexión en <code>application.properties</code>:</p>
+<pre><code class="language-properties"># Ejemplo authService
+spring.datasource.url=jdbc:postgresql://localhost:5432/librodigital_auth
+spring.datasource.username=postgres
+spring.datasource.password=****
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=false
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Propiedad</th>
+<th>Propósito</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>spring.datasource.url</code></td>
+<td>URL JDBC a la BD del servicio</td>
+</tr>
+<tr>
+<td><code>spring.jpa.hibernate.ddl-auto=update</code></td>
+<td>Sincroniza esquema con entidades JPA en desarrollo</td>
+</tr>
+<tr>
+<td><code>PostgreSQLDialect</code></td>
+<td>Generación SQL compatible con PostgreSQL</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>En producción se recomienda <code>ddl-auto=validate</code> y aplicar cambios solo vía scripts versionados en <code>infraestructura/ddl/</code>.</p>
+</blockquote>
+<h3>3.2 Capas de acceso a datos</h3>
+<pre><code>Controller (REST)
+      ↓
+Service / ServiceImpl  ← lógica de negocio y validaciones
+      ↓
+Repository (JpaRepository)  ← acceso a datos
+      ↓
+Entidad JPA (@Entity)  ← mapeo objeto-relacional
+      ↓
+PostgreSQL
+</code></pre>
+<p><strong>Ejemplo — authService:</strong></p>
+<pre><code class="language-java">@Entity
+@Table(name = &quot;users&quot;)
+public class User {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String username;
+    private String password;  // BCrypt hash
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = &quot;user_roles&quot;, ...)
+    private Set&lt;Role&gt; roles;
+}
+
+public interface UserRepository extends JpaRepository&lt;User, Long&gt; {
+    Optional&lt;User&gt; findByUsername(String username);
+}
+</code></pre>
+<h3>3.3 Patrón Repository</h3>
+<p>Spring Data JPA genera implementaciones automáticas de repositorios. Ventajas:</p>
+<ul>
+<li>Consultas derivadas del nombre del método (<code>findByFirstName</code>)</li>
+<li>Integración con transacciones (<code>@Transactional</code>)</li>
+<li>Facilita pruebas unitarias con mocks (<code>@Mock UserRepository</code>)</li>
+</ul>
+<hr>
+<h2>4. Esquemas por servicio</h2>
+<h3>4.1 librodigital_auth (authService)</h3>
+<p><img src="../diagrams/auth_er_model.png" alt="Modelo ER Auth"></p>
+<table>
+<thead>
+<tr>
+<th>Tabla</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>users</code></td>
+<td>Credenciales, email, estado activo</td>
+</tr>
+<tr>
+<td><code>role</code></td>
+<td>Catálogo de roles (<code>ADMIN</code>, <code>DOCENTE</code>, <code>APODERADO</code>, <code>ESTUDIANTE</code>)</td>
+</tr>
+<tr>
+<td><code>user_roles</code></td>
+<td>Relación N:M usuario ↔ rol</td>
+</tr>
+</tbody></table>
+<p><strong>Normalización:</strong> 3FN — los roles están en tabla separada; no hay redundancia de nombres de rol en <code>users</code>.</p>
+<h3>4.2 librodigital_academic (academicService)</h3>
+<p><img src="../diagrams/academic_er_model.png" alt="Modelo ER Academic"></p>
+<p>El esquema académico fue <strong>normalizado a Tercera Forma Normal (3FN)</strong>:</p>
+<ul>
+<li><p><strong>Catálogos</strong> reemplazan columnas VARCHAR categóricas:</p>
+<ul>
+<li><code>student_statuses</code>, <code>teacher_statuses</code>, <code>course_statuses</code>, <code>enrollment_statuses</code></li>
+<li><code>evaluation_types</code>, <code>evaluation_statuses</code>, <code>grade_statuses</code></li>
+<li><code>relationship_types</code>, <code>contract_types</code>, <code>subject_types</code>, <code>shifts</code></li>
+<li><code>education_levels</code>, <code>academic_years</code></li>
+</ul>
+</li>
+<li><p><strong>Entidades principales</strong> con claves foráneas internas:</p>
+<ul>
+<li><code>guardians</code>, <code>teachers</code>, <code>students</code></li>
+<li><code>courses</code>, <code>subjects</code>, <code>enrollments</code></li>
+<li><code>evaluations</code>, <code>grades</code></li>
+</ul>
+</li>
+</ul>
+<p><strong>Beneficio de la normalización:</strong> elimina redundancia, garantiza integridad referencial dentro del dominio académico y facilita consultas por catálogo.</p>
+<h3>4.3 librodigital_attendance (attendanceService)</h3>
+<p><img src="../diagrams/attendance_er_model.png" alt="Modelo ER Attendance"></p>
+<table>
+<thead>
+<tr>
+<th>Tabla</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>class_sessions</code></td>
+<td>Sesión de clase (fecha, curso, asignatura, docente — IDs lógicos)</td>
+</tr>
+<tr>
+<td><code>attendance_records</code></td>
+<td>Registro de asistencia por estudiante y sesión</td>
+</tr>
+<tr>
+<td><code>annotations</code></td>
+<td>Anotaciones de conducta vinculadas a estudiante/sesión</td>
+</tr>
+</tbody></table>
+<p><strong>Referencias lógicas cross-service:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Campo en attendance</th>
+<th>Referencia lógica</th>
+<th>Servicio origen</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>course_id</code></td>
+<td>Curso</td>
+<td>academicService</td>
+</tr>
+<tr>
+<td><code>subject_id</code></td>
+<td>Asignatura</td>
+<td>academicService</td>
+</tr>
+<tr>
+<td><code>teacher_id</code></td>
+<td>Docente</td>
+<td>academicService</td>
+</tr>
+<tr>
+<td><code>student_id</code></td>
+<td>Estudiante</td>
+<td>academicService</td>
+</tr>
+</tbody></table>
+<p>Estos IDs se validan en la capa de servicio; no hay FK física hacia <code>librodigital_academic</code>.</p>
+<hr>
+<h2>5. Scripts SQL y migraciones</h2>
+<p>Ubicación: <code>infraestructura/ddl/</code></p>
+<table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Uso</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>00_create_databases.sql</code></td>
+<td>Crear las 3 bases</td>
+</tr>
+<tr>
+<td><code>auth_schema.sql</code></td>
+<td>Esquema completo auth + datos demo</td>
+</tr>
+<tr>
+<td><code>academic_schema.sql</code></td>
+<td>Esquema académico 3FN + catálogos + demo</td>
+</tr>
+<tr>
+<td><code>attendance_schema.sql</code></td>
+<td>Esquema asistencia + catálogos + demo</td>
+</tr>
+<tr>
+<td><code>migrations/001–004</code></td>
+<td>Solo para actualizar BDs creadas con esquema antiguo</td>
+</tr>
+</tbody></table>
+<p><strong>Instalación nueva:</strong> ejecutar <code>00_create_databases.sql</code> y luego cada <code>*_schema.sql</code>.</p>
+<hr>
+<h2>6. Procedimientos almacenados</h2>
+<p>En esta etapa del proyecto <strong>no se utilizan procedimientos almacenados (SP)</strong>. La persistencia se implementa íntegramente con:</p>
+<ul>
+<li><strong>JPA/Hibernate</strong> para CRUD y consultas derivadas</li>
+<li><strong>JPQL / @Query</strong> cuando se requieren consultas personalizadas</li>
+<li><strong>Scripts DDL</strong> versionados para instalación y migraciones</li>
+</ul>
+<p>Esta decisión prioriza la portabilidad del código Java y la coherencia con el patrón Repository de Spring.</p>
+<hr>
+<h2>7. Transacciones y consistencia</h2>
+<ul>
+<li>Cada operación de escritura en un servicio se ejecuta dentro de una <strong>transacción local</strong> (<code>@Transactional</code> en la capa Service).</li>
+<li>No hay transacciones distribuidas (2PC) entre microservicios.</li>
+<li>La <strong>consistencia eventual</strong> entre dominios se logra mediante:<ul>
+<li>Validación de IDs antes de persistir (attendance verifica que <code>student_id</code> exista vía API o reglas de negocio)</li>
+<li>Diseño de APIs idempotentes donde corresponde</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2>8. Seguridad de datos</h2>
+<table>
+<thead>
+<tr>
+<th>Aspecto</th>
+<th>Implementación</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Contraseñas</td>
+<td>Hash <strong>BCrypt</strong> en <code>authService</code>; nunca en texto plano</td>
+</tr>
+<tr>
+<td>Tokens</td>
+<td>JWT firmado; sin estado en servidor (stateless)</td>
+</tr>
+<tr>
+<td>Exposición API</td>
+<td>DTOs separados de entidades; no se serializan campos sensibles</td>
+</tr>
+<tr>
+<td>Conexión BD</td>
+<td>Credenciales en <code>application.properties</code> (variables de entorno en producción)</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>9. Datos de demostración</h2>
+<p>Usuarios de prueba (auth):</p>
+<table>
+<thead>
+<tr>
+<th>Usuario</th>
+<th>Rol</th>
+<th>Contraseña</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>admin_colegio</code></td>
+<td>ADMIN</td>
+<td><code>test1234</code></td>
+</tr>
+<tr>
+<td><code>prof_castillo</code></td>
+<td>DOCENTE</td>
+<td><code>test1234</code></td>
+</tr>
+<tr>
+<td><code>apoderado_demo</code></td>
+<td>APODERADO</td>
+<td><code>test1234</code></td>
+</tr>
+<tr>
+<td><code>estudiante_demo</code></td>
+<td>ESTUDIANTE</td>
+<td><code>test1234</code></td>
+</tr>
+</tbody></table>
+<p>Los scripts <code>*_schema.sql</code> incluyen registros demo para academic y attendance que permiten probar flujos completos sin carga manual.</p>
+<hr>
+<h2>10. Conclusión</h2>
+<p>La persistencia del sistema se implementa con <strong>JPA/Hibernate sobre PostgreSQL</strong>, siguiendo <strong>Database per Service</strong> y <strong>normalización 3FN</strong> en los dominios académico y de asistencia. Los scripts DDL en <code>infraestructura/ddl/</code> documentan el esquema físico; las entidades JPA en cada microservicio mantienen la sincronización en desarrollo. Esta arquitectura garantiza <strong>separación de responsabilidades</strong>, <strong>integridad referencial intra-servicio</strong> y <strong>escalabilidad</strong> acorde a los requisitos del caso Libro Digital.</p>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EvaluationController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.academicService.controller</a> &gt; <span class="el_source">EvaluationController.java</span></div><h1>EvaluationController.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.academicService.controller;
+
+import cl.duoc.libroDigital.academicService.model.Evaluation;
+import cl.duoc.libroDigital.academicService.dto.EvaluationDTO;
+import cl.duoc.libroDigital.academicService.repository.SubjectRepository;
+import cl.duoc.libroDigital.academicService.service.CatalogLookupService;
+import cl.duoc.libroDigital.academicService.service.EvaluationService;
+import cl.duoc.libroDigital.academicService.security.AcademicAccessService;
+
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping(&quot;/evaluations&quot;)
+public class EvaluationController {
+
+    private final EvaluationService evaluationService;
+    private final SubjectRepository subjectRepository;
+    private final CatalogLookupService catalogs;
+    private final AcademicAccessService access;
+
+<span class="fc" id="L24">    public EvaluationController(</span>
+            EvaluationService evaluationService,
+            SubjectRepository subjectRepository,
+            CatalogLookupService catalogs,
+            AcademicAccessService access) {
+<span class="fc" id="L29">        this.evaluationService = evaluationService;</span>
+<span class="fc" id="L30">        this.subjectRepository = subjectRepository;</span>
+<span class="fc" id="L31">        this.catalogs = catalogs;</span>
+<span class="fc" id="L32">        this.access = access;</span>
+<span class="fc" id="L33">    }</span>
+
+    private EvaluationDTO toDTO(Evaluation e) {
+<span class="fc" id="L36">        EvaluationDTO dto = new EvaluationDTO();</span>
+<span class="fc" id="L37">        dto.setId(e.getId());</span>
+<span class="fc" id="L38">        dto.setSubjectId(e.getSubjectId());</span>
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">        if (e.getSubjectId() != null) {</span>
+<span class="fc" id="L40">            subjectRepository.findById(e.getSubjectId())</span>
+<span class="fc" id="L41">                    .ifPresent(s -&gt; dto.setCourseId(s.getCourseId()));</span>
+        }
+<span class="fc" id="L43">        dto.setName(e.getName());</span>
+<span class="fc" id="L44">        dto.setDate(e.getDate());</span>
+<span class="fc" id="L45">        dto.setEvaluationType(catalogs.code(&quot;evaluation_types&quot;, e.getEvaluationTypeId()));</span>
+<span class="fc" id="L46">        dto.setEvaluationStatus(catalogs.code(&quot;evaluation_statuses&quot;, e.getEvaluationStatusId()));</span>
+<span class="fc" id="L47">        dto.setMaxScore(e.getMaxScore());</span>
+<span class="fc" id="L48">        dto.setWeight(e.getWeight());</span>
+<span class="fc" id="L49">        dto.setDescription(e.getDescription());</span>
+<span class="fc" id="L50">        dto.setCreatedAt(e.getCreatedAt());</span>
+<span class="fc" id="L51">        dto.setUpdatedAt(e.getUpdatedAt());</span>
+<span class="fc" id="L52">        return dto;</span>
+    }
+
+    private Evaluation toEntity(EvaluationDTO dto) {
+<span class="fc" id="L56">        Evaluation e = new Evaluation();</span>
+<span class="fc" id="L57">        e.setId(dto.getId());</span>
+<span class="fc" id="L58">        e.setSubjectId(dto.getSubjectId());</span>
+<span class="fc" id="L59">        e.setName(dto.getName());</span>
+<span class="fc" id="L60">        e.setDate(dto.getDate());</span>
+<span class="fc" id="L61">        e.setEvaluationTypeId(catalogs.requireId(&quot;evaluation_types&quot;, dto.getEvaluationType()));</span>
+<span class="fc" id="L62">        e.setEvaluationStatusId(catalogs.requireId(&quot;evaluation_statuses&quot;, dto.getEvaluationStatus()));</span>
+<span class="fc" id="L63">        e.setMaxScore(dto.getMaxScore());</span>
+<span class="fc" id="L64">        e.setWeight(dto.getWeight());</span>
+<span class="fc" id="L65">        e.setDescription(dto.getDescription());</span>
+<span class="fc" id="L66">        return e;</span>
+    }
+
+    @PostMapping
+    public EvaluationDTO createEvaluation(@RequestBody EvaluationDTO dto) {
+<span class="fc" id="L71">        access.ensureCanManageEvaluationSubject(dto.getSubjectId());</span>
+<span class="fc" id="L72">        Evaluation created = evaluationService.createEvaluation(toEntity(dto));</span>
+<span class="fc" id="L73">        return toDTO(created);</span>
+    }
+
+    @GetMapping
+    public List&lt;EvaluationDTO&gt; getAllEvaluations() {
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">        if (access.isAdmin()) {</span>
+<span class="nc" id="L79">            return evaluationService.getAllEvaluations().stream().map(this::toDTO).collect(Collectors.toList());</span>
+        }
+<span class="fc" id="L81">        Long teacherId = access.requireTeacherId();</span>
+<span class="fc" id="L82">        List&lt;Long&gt; subjectIds = access.teacherSubjectIds(teacherId);</span>
+<span class="fc" id="L83">        return evaluationService.getAllEvaluations().stream()</span>
+<span class="pc bpc" id="L84" title="1 of 4 branches missed.">                .filter(e -&gt; e.getSubjectId() != null &amp;&amp; subjectIds.contains(e.getSubjectId()))</span>
+<span class="fc" id="L85">                .map(this::toDTO)</span>
+<span class="fc" id="L86">                .collect(Collectors.toList());</span>
+    }
+
+    @GetMapping(&quot;/{id}&quot;)
+    public EvaluationDTO getEvaluation(@PathVariable Long id) {
+<span class="fc" id="L91">        Evaluation evaluation = evaluationService.getEvaluationById(id).orElse(null);</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">        if (evaluation == null) {</span>
+<span class="nc" id="L93">            return null;</span>
+        }
+<span class="fc" id="L95">        access.ensureCanReadSubject(evaluation.getSubjectId());</span>
+<span class="fc" id="L96">        return toDTO(evaluation);</span>
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    public EvaluationDTO updateEvaluation(@PathVariable Long id, @RequestBody EvaluationDTO dto) {
+<span class="nc" id="L101">        access.ensureCanManageEvaluation(id);</span>
+<span class="nc" id="L102">        Evaluation updated = evaluationService.updateEvaluation(id, toEntity(dto));</span>
+<span class="nc" id="L103">        return toDTO(updated);</span>
+    }
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    public void deleteEvaluation(@PathVariable Long id) {
+<span class="nc" id="L108">        access.ensureCanManageEvaluation(id);</span>
+<span class="nc" id="L109">        evaluationService.deleteEvaluation(id);</span>
+<span class="nc" id="L110">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GuardianController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.academicService.controller</a> &gt; <span class="el_source">GuardianController.java</span></div><h1>GuardianController.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.academicService.controller;
+
+import cl.duoc.libroDigital.academicService.dto.GuardianDTO;
+import cl.duoc.libroDigital.academicService.dto.StudentDTO;
+import cl.duoc.libroDigital.academicService.model.Guardian;
+import cl.duoc.libroDigital.academicService.model.Student;
+import cl.duoc.libroDigital.academicService.repository.StudentRepository;
+import cl.duoc.libroDigital.academicService.service.CatalogLookupService;
+import cl.duoc.libroDigital.academicService.service.GuardianService;
+import cl.duoc.libroDigital.academicService.security.AcademicAccessService;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping(&quot;/guardians&quot;)
+public class GuardianController {
+
+    private final GuardianService guardianService;
+    private final CatalogLookupService catalogs;
+    private final AcademicAccessService access;
+    private final StudentRepository studentRepository;
+
+<span class="fc" id="L26">    public GuardianController(</span>
+            GuardianService guardianService,
+            CatalogLookupService catalogs,
+            AcademicAccessService access,
+            StudentRepository studentRepository) {
+<span class="fc" id="L31">        this.guardianService = guardianService;</span>
+<span class="fc" id="L32">        this.catalogs = catalogs;</span>
+<span class="fc" id="L33">        this.access = access;</span>
+<span class="fc" id="L34">        this.studentRepository = studentRepository;</span>
+<span class="fc" id="L35">    }</span>
+
+    private GuardianDTO toDTO(Guardian guardian) {
+<span class="fc" id="L38">        GuardianDTO dto = new GuardianDTO();</span>
+<span class="fc" id="L39">        dto.setId(guardian.getId());</span>
+<span class="fc" id="L40">        dto.setRut(guardian.getRut());</span>
+<span class="fc" id="L41">        dto.setFirstName(guardian.getFirstName());</span>
+<span class="fc" id="L42">        dto.setLastName(guardian.getLastName());</span>
+<span class="fc" id="L43">        dto.setSecondLastName(guardian.getSecondLastName());</span>
+<span class="fc" id="L44">        dto.setEmail(guardian.getEmail());</span>
+<span class="fc" id="L45">        dto.setPhone(guardian.getPhone());</span>
+<span class="fc" id="L46">        dto.setEmergencyPhone(guardian.getEmergencyPhone());</span>
+<span class="fc" id="L47">        dto.setAddress(guardian.getAddress());</span>
+<span class="fc" id="L48">        dto.setCommune(guardian.getCommune());</span>
+<span class="fc" id="L49">        dto.setCity(guardian.getCity());</span>
+<span class="fc" id="L50">        dto.setRelationship(catalogs.code(&quot;relationship_types&quot;, guardian.getRelationshipId()));</span>
+<span class="fc" id="L51">        dto.setOccupation(guardian.getOccupation());</span>
+<span class="fc" id="L52">        dto.setWorkplace(guardian.getWorkplace());</span>
+<span class="fc" id="L53">        dto.setWorkPhone(guardian.getWorkPhone());</span>
+<span class="fc" id="L54">        dto.setIsPrimary(guardian.getIsPrimary());</span>
+<span class="fc" id="L55">        dto.setUserId(guardian.getUserId());</span>
+<span class="fc" id="L56">        dto.setCreatedAt(guardian.getCreatedAt());</span>
+<span class="fc" id="L57">        dto.setUpdatedAt(guardian.getUpdatedAt());</span>
+<span class="fc" id="L58">        return dto;</span>
+    }
+
+    private StudentDTO toStudentDTO(Student student) {
+<span class="fc" id="L62">        StudentDTO dto = new StudentDTO();</span>
+<span class="fc" id="L63">        dto.setId(student.getId());</span>
+<span class="fc" id="L64">        dto.setRut(student.getRut());</span>
+<span class="fc" id="L65">        dto.setFirstName(student.getFirstName());</span>
+<span class="fc" id="L66">        dto.setSecondName(student.getSecondName());</span>
+<span class="fc" id="L67">        dto.setLastName(student.getLastName());</span>
+<span class="fc" id="L68">        dto.setMotherLastName(student.getMotherLastName());</span>
+<span class="fc" id="L69">        dto.setEmail(student.getEmail());</span>
+<span class="fc" id="L70">        dto.setEnrollmentNumber(student.getEnrollmentNumber());</span>
+<span class="fc" id="L71">        dto.setGuardianId(student.getGuardianId());</span>
+<span class="fc" id="L72">        dto.setStudentStatus(catalogs.code(&quot;student_statuses&quot;, student.getStudentStatusId()));</span>
+<span class="fc" id="L73">        return dto;</span>
+    }
+
+    private Guardian toEntity(GuardianDTO dto) {
+<span class="fc" id="L77">        Guardian guardian = new Guardian();</span>
+<span class="fc" id="L78">        guardian.setId(dto.getId());</span>
+<span class="fc" id="L79">        guardian.setRut(dto.getRut());</span>
+<span class="fc" id="L80">        guardian.setFirstName(dto.getFirstName());</span>
+<span class="fc" id="L81">        guardian.setLastName(dto.getLastName());</span>
+<span class="fc" id="L82">        guardian.setSecondLastName(dto.getSecondLastName());</span>
+<span class="fc" id="L83">        guardian.setEmail(dto.getEmail());</span>
+<span class="fc" id="L84">        guardian.setPhone(dto.getPhone());</span>
+<span class="fc" id="L85">        guardian.setEmergencyPhone(dto.getEmergencyPhone());</span>
+<span class="fc" id="L86">        guardian.setAddress(dto.getAddress());</span>
+<span class="fc" id="L87">        guardian.setCommune(dto.getCommune());</span>
+<span class="fc" id="L88">        guardian.setCity(dto.getCity());</span>
+<span class="fc" id="L89">        guardian.setRelationshipId(catalogs.requireId(&quot;relationship_types&quot;, dto.getRelationship()));</span>
+<span class="fc" id="L90">        guardian.setOccupation(dto.getOccupation());</span>
+<span class="fc" id="L91">        guardian.setWorkplace(dto.getWorkplace());</span>
+<span class="fc" id="L92">        guardian.setWorkPhone(dto.getWorkPhone());</span>
+<span class="fc" id="L93">        guardian.setIsPrimary(dto.getIsPrimary());</span>
+<span class="fc" id="L94">        guardian.setUserId(dto.getUserId());</span>
+<span class="fc" id="L95">        return guardian;</span>
+    }
+
+    @GetMapping(&quot;/me&quot;)
+    public ResponseEntity&lt;GuardianDTO&gt; getCurrentGuardian() {
+<span class="fc" id="L100">        return access.currentGuardian()</span>
+<span class="pc" id="L101">                .map(guardian -&gt; ResponseEntity.ok(toDTO(guardian)))</span>
+<span class="fc" id="L102">                .orElse(ResponseEntity.notFound().build());</span>
+    }
+
+    @GetMapping(&quot;/me/students&quot;)
+    public ResponseEntity&lt;List&lt;StudentDTO&gt;&gt; getMyStudents() {
+<span class="fc" id="L107">        Long guardianId = access.requireGuardianId();</span>
+<span class="fc" id="L108">        List&lt;StudentDTO&gt; students = studentRepository.findByGuardianId(guardianId).stream()</span>
+<span class="fc" id="L109">                .map(this::toStudentDTO)</span>
+<span class="fc" id="L110">                .toList();</span>
+<span class="fc" id="L111">        return ResponseEntity.ok(students);</span>
+    }
+
+    @PostMapping
+    public ResponseEntity&lt;GuardianDTO&gt; createGuardian(@RequestBody GuardianDTO dto) {
+<span class="fc" id="L116">        access.requireAdmin();</span>
+<span class="fc" id="L117">        return ResponseEntity.ok(toDTO(guardianService.createGuardian(toEntity(dto))));</span>
+    }
+
+    @GetMapping
+    public ResponseEntity&lt;List&lt;GuardianDTO&gt;&gt; getAllGuardians() {
+<span class="nc" id="L122">        access.requireAdmin();</span>
+<span class="nc" id="L123">        return ResponseEntity.ok(guardianService.getAllGuardians().stream().map(this::toDTO).toList());</span>
+    }
+
+    @GetMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;GuardianDTO&gt; getGuardianById(@PathVariable Long id) {
+<span class="nc" id="L128">        access.requireAdmin();</span>
+<span class="nc" id="L129">        return guardianService.getGuardianById(id)</span>
+<span class="nc" id="L130">                .map(g -&gt; ResponseEntity.ok(toDTO(g)))</span>
+<span class="nc" id="L131">                .orElse(ResponseEntity.notFound().build());</span>
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;GuardianDTO&gt; updateGuardian(@PathVariable Long id, @RequestBody GuardianDTO dto) {
+<span class="nc" id="L136">        access.requireAdmin();</span>
+<span class="nc" id="L137">        Guardian updated = guardianService.updateGuardian(id, toEntity(dto));</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">        if (updated != null) {</span>
+<span class="nc" id="L139">            return ResponseEntity.ok(toDTO(updated));</span>
+        }
+<span class="nc" id="L141">        return ResponseEntity.notFound().build();</span>
+    }
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;Void&gt; deleteGuardian(@PathVariable Long id) {
+<span class="nc" id="L146">        access.requireAdmin();</span>
+<span class="nc" id="L147">        guardianService.deleteGuardian(id);</span>
+<span class="nc" id="L148">        return ResponseEntity.noContent().build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

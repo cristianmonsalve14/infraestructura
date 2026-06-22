@@ -48,13 +48,18 @@ Ubicación: `infraestructura/ddl/`
 | Archivo | Uso |
 |---|---|
 | `00_create_databases.sql` | Crear las 3 bases |
-| `auth_schema.sql` | Esquema auth |
-| `academic_schema.sql` | Esquema académico + datos demo |
-| `attendance_schema.sql` | Esquema asistencia + datos demo |
-| `initial_schema.sql` | ⚠️ Legado monolítico — no usar |
-| `migrations/001_cleanup_academic.sql` | Limpieza columnas legadas (ejecutar en BD existente) |
+| `auth_schema.sql` | Esquema auth (final) |
+| `academic_schema.sql` | Esquema académico normalizado 3FN + catálogos + demo |
+| `attendance_schema.sql` | Esquema asistencia normalizado 3FN + catálogos + demo |
+> Instalación nueva: ejecutar solo los `*_schema.sql`. Las migraciones en `migrations/` son para actualizar BDs antiguas.
+
+| `migrations/001_cleanup_academic.sql` | Limpieza columnas legadas (BD existente) |
 | `migrations/002_normalizacion_academic.sql` | Catálogos, FK y 3FN en `librodigital_academic` |
 | `migrations/002_normalizacion_attendance.sql` | Catálogos y FK en `librodigital_attendance` |
+| `migrations/003_shifts_completa.sql` | Renombra jornada VESPERTINO → COMPLETA |
+| `migrations/004_teachers_auth_link.sql` | Vínculo `teachers.auth_username` / `user_id` con authService |
+
+> `initial_schema.sql` (monolito) está archivado en `../archive/ddl/`.
 
 ## Datos de prueba actuales (attendance)
 
@@ -90,7 +95,6 @@ Columnas removidas del esquema académico por ser legado o redundantes:
 |---|---|---|
 | `students` | `blood_type`, `allergies`, `medical_conditions`, `emergency_medication`, `name` | Datos médicos fuera de alcance |
 | `courses` | `teacher_id`, `year` | Reemplazados por `head_teacher_id`, `academic_year` |
-| `teachers` | `user_id` | No usado en entidad actual |
 | `evaluations` | `grade` | Las notas van en tabla `grades` |
 | `grades` | `letter_grade`, `percentage` | Calculables desde `score` |
 
@@ -116,17 +120,39 @@ Cambios aplicados para cumplir 3FN e integridad referencial:
 
 Los `VARCHAR` que permanecen son datos reales de texto libre: nombres, RUT, email, dirección, descripciones y comentarios.
 
-## Usuario de acceso
+## Vínculo docente ↔ auth (migración 004)
 
-Registrar vía API Gateway:
+Se agregan `teachers.auth_username` y `teachers.user_id` para enlazar profesores con cuentas de `authService`. `TeacherAuthLinkConfig` en academicService asigna `auth_username = 'prof_castillo'` al inicio.
+
+## Usuarios demo (RBAC)
+
+Creados automáticamente al iniciar `authService` (`DemoUserInitializerConfig`):
+
+| Usuario | Contraseña | Rol | Uso |
+|---|---|---|---|
+| `admin_colegio` | `test1234` | ADMINISTRADOR | Director / secretaría — CRUD completo |
+| `prof_castillo` | `test1234` | DOCENTE | Profesor — solo su carga académica |
+| `apoderado_demo` | `test1234` | APODERADO | Panel apoderado |
+| `estudiante_demo` | `test1234` | ESTUDIANTE | Panel estudiante |
+| `postman_test` | `test1234` | ADMINISTRADOR | Pruebas API (si existe en BD) |
+
+Vínculo docente ↔ auth: al iniciar `academicService`, `TeacherAuthLinkConfig` asigna `auth_username = 'prof_castillo'` al profesor con email `prof.castillo@duoc.cl` (o al primero disponible).
 
 ```http
-POST http://localhost:8090/auth/register
+POST http://localhost:8090/auth/login
 Content-Type: application/json
 
 {
-  "username": "admin",
-  "email": "admin@librodigital.cl",
-  "password": "admin123!"
+  "username": "admin_colegio",
+  "password": "test1234"
 }
 ```
+
+Perfil autenticado:
+
+```http
+GET http://localhost:8090/auth/me
+Authorization: Bearer {accessToken}
+```
+
+El registro público (`POST /auth/register`) está deshabilitado; solicitar acceso al administrador.

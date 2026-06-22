@@ -1,0 +1,850 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AcademicAccessService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.academicService.security</a> &gt; <span class="el_source">AcademicAccessService.java</span></div><h1>AcademicAccessService.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.academicService.security;
+
+
+
+import cl.duoc.libroDigital.academicService.exception.ForbiddenException;
+
+import cl.duoc.libroDigital.academicService.model.Enrollment;
+
+import cl.duoc.libroDigital.academicService.model.Evaluation;
+
+import cl.duoc.libroDigital.academicService.model.Grade;
+
+import cl.duoc.libroDigital.academicService.model.Guardian;
+
+import cl.duoc.libroDigital.academicService.model.Student;
+
+import cl.duoc.libroDigital.academicService.model.Subject;
+
+import cl.duoc.libroDigital.academicService.model.Teacher;
+
+import cl.duoc.libroDigital.academicService.repository.CourseRepository;
+
+import cl.duoc.libroDigital.academicService.repository.EnrollmentRepository;
+
+import cl.duoc.libroDigital.academicService.repository.EvaluationRepository;
+
+import cl.duoc.libroDigital.academicService.repository.GradeRepository;
+
+import cl.duoc.libroDigital.academicService.repository.GuardianRepository;
+
+import cl.duoc.libroDigital.academicService.repository.StudentRepository;
+
+import cl.duoc.libroDigital.academicService.repository.SubjectRepository;
+
+import cl.duoc.libroDigital.academicService.repository.TeacherRepository;
+
+
+
+import org.springframework.security.core.Authentication;
+
+import org.springframework.security.core.GrantedAuthority;
+
+import org.springframework.security.core.context.SecurityContextHolder;
+
+import org.springframework.stereotype.Service;
+
+
+
+import java.util.HashSet;
+
+import java.util.List;
+
+import java.util.Objects;
+
+import java.util.Optional;
+
+import java.util.Set;
+
+import java.util.stream.Collectors;
+
+
+
+@Service
+
+public class AcademicAccessService {
+
+
+
+    private final TeacherRepository teacherRepository;
+
+    private final StudentRepository studentRepository;
+
+    private final GuardianRepository guardianRepository;
+
+    private final SubjectRepository subjectRepository;
+
+    private final CourseRepository courseRepository;
+
+    private final EnrollmentRepository enrollmentRepository;
+
+    private final EvaluationRepository evaluationRepository;
+
+    private final GradeRepository gradeRepository;
+
+
+
+<span class="fc" id="L87">    public AcademicAccessService(</span>
+
+            TeacherRepository teacherRepository,
+
+            StudentRepository studentRepository,
+
+            GuardianRepository guardianRepository,
+
+            SubjectRepository subjectRepository,
+
+            CourseRepository courseRepository,
+
+            EnrollmentRepository enrollmentRepository,
+
+            EvaluationRepository evaluationRepository,
+
+            GradeRepository gradeRepository) {
+
+<span class="fc" id="L105">        this.teacherRepository = teacherRepository;</span>
+
+<span class="fc" id="L107">        this.studentRepository = studentRepository;</span>
+
+<span class="fc" id="L109">        this.guardianRepository = guardianRepository;</span>
+
+<span class="fc" id="L111">        this.subjectRepository = subjectRepository;</span>
+
+<span class="fc" id="L113">        this.courseRepository = courseRepository;</span>
+
+<span class="fc" id="L115">        this.enrollmentRepository = enrollmentRepository;</span>
+
+<span class="fc" id="L117">        this.evaluationRepository = evaluationRepository;</span>
+
+<span class="fc" id="L119">        this.gradeRepository = gradeRepository;</span>
+
+<span class="fc" id="L121">    }</span>
+
+
+
+    public boolean isAdmin() {
+
+<span class="fc" id="L127">        return hasRole(&quot;ADMINISTRADOR&quot;);</span>
+
+    }
+
+
+
+    public boolean isTeacher() {
+
+<span class="fc" id="L135">        return hasRole(&quot;DOCENTE&quot;);</span>
+
+    }
+
+
+
+    public boolean isGuardian() {
+
+<span class="fc" id="L143">        return hasRole(&quot;APODERADO&quot;);</span>
+
+    }
+
+
+
+    public boolean isStudent() {
+
+<span class="fc" id="L151">        return hasRole(&quot;ESTUDIANTE&quot;);</span>
+
+    }
+
+
+
+    public void requireAdmin() {
+
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">        if (!isAdmin()) {</span>
+
+<span class="fc" id="L161">            throw new ForbiddenException(&quot;Solo administración puede realizar esta acción&quot;);</span>
+
+        }
+
+<span class="nc" id="L165">    }</span>
+
+
+
+    public void requireTeacherOrAdmin() {
+
+<span class="pc bpc" id="L171" title="2 of 4 branches missed.">        if (!isAdmin() &amp;&amp; !isTeacher()) {</span>
+
+<span class="fc" id="L173">            throw new ForbiddenException(&quot;No tiene permisos para esta acción&quot;);</span>
+
+        }
+
+<span class="nc" id="L177">    }</span>
+
+
+
+    public void requireFamilyOrStaffRead() {
+
+<span class="pc bpc" id="L183" title="4 of 8 branches missed.">        if (!isAdmin() &amp;&amp; !isTeacher() &amp;&amp; !isGuardian() &amp;&amp; !isStudent()) {</span>
+
+<span class="fc" id="L185">            throw new ForbiddenException(&quot;No tiene permisos para esta acción&quot;);</span>
+
+        }
+
+<span class="nc" id="L189">    }</span>
+
+
+
+    /** Notas, evaluaciones y registros pedagógicos: solo docentes pueden escribir. */
+
+    public void requireTeacherForPedagogicalWrite() {
+
+<span class="fc bfc" id="L197" title="All 2 branches covered.">        if (isAdmin()) {</span>
+
+<span class="fc" id="L199">            throw new ForbiddenException(&quot;La administración solo puede consultar esta información, no modificarla&quot;);</span>
+
+        }
+
+<span class="pc bpc" id="L203" title="1 of 2 branches missed.">        if (!isTeacher()) {</span>
+
+<span class="nc" id="L205">            throw new ForbiddenException(&quot;No tiene permisos para esta acción&quot;);</span>
+
+        }
+
+<span class="fc" id="L209">    }</span>
+
+
+
+    public Optional&lt;Long&gt; currentTeacherId() {
+
+<span class="fc" id="L215">        return currentTeacher().map(Teacher::getId);</span>
+
+    }
+
+
+
+    public Long requireTeacherId() {
+
+<span class="fc" id="L223">        return currentTeacherId()</span>
+
+<span class="pc" id="L225">                .orElseThrow(() -&gt; new ForbiddenException(&quot;No hay un profesor vinculado a esta cuenta&quot;));</span>
+
+    }
+
+
+
+    public Optional&lt;Long&gt; currentStudentId() {
+
+<span class="fc" id="L233">        return currentStudent().map(Student::getId);</span>
+
+    }
+
+
+
+    public Long requireStudentId() {
+
+<span class="fc" id="L241">        return currentStudentId()</span>
+
+<span class="pc" id="L243">                .orElseThrow(() -&gt; new ForbiddenException(&quot;No hay un estudiante vinculado a esta cuenta&quot;));</span>
+
+    }
+
+
+
+    public Optional&lt;Long&gt; currentGuardianId() {
+
+<span class="fc" id="L251">        return currentGuardian().map(Guardian::getId);</span>
+
+    }
+
+
+
+    public Long requireGuardianId() {
+
+<span class="fc" id="L259">        return currentGuardianId()</span>
+
+<span class="pc" id="L261">                .orElseThrow(() -&gt; new ForbiddenException(&quot;No hay un apoderado vinculado a esta cuenta&quot;));</span>
+
+    }
+
+
+
+    public Optional&lt;Teacher&gt; currentTeacher() {
+
+<span class="pc bpc" id="L269" title="1 of 2 branches missed.">        if (!isTeacher()) {</span>
+
+<span class="nc" id="L271">            return Optional.empty();</span>
+
+        }
+
+<span class="fc" id="L275">        return currentPrincipal().flatMap(this::resolveTeacher);</span>
+
+    }
+
+
+
+    public Optional&lt;Student&gt; currentStudent() {
+
+<span class="pc bpc" id="L283" title="1 of 2 branches missed.">        if (!isStudent()) {</span>
+
+<span class="nc" id="L285">            return Optional.empty();</span>
+
+        }
+
+<span class="fc" id="L289">        return currentPrincipal().flatMap(this::resolveStudent);</span>
+
+    }
+
+
+
+    public Optional&lt;Guardian&gt; currentGuardian() {
+
+<span class="pc bpc" id="L297" title="1 of 2 branches missed.">        if (!isGuardian()) {</span>
+
+<span class="nc" id="L299">            return Optional.empty();</span>
+
+        }
+
+<span class="fc" id="L303">        return currentPrincipal().flatMap(this::resolveGuardian);</span>
+
+    }
+
+
+
+    public List&lt;Long&gt; guardianStudentIds(Long guardianId) {
+
+<span class="fc" id="L311">        return studentRepository.findByGuardianId(guardianId).stream()</span>
+
+<span class="fc" id="L313">                .map(Student::getId)</span>
+
+<span class="fc" id="L315">                .toList();</span>
+
+    }
+
+
+
+    public Set&lt;Long&gt; familyAccessibleStudentIds() {
+
+<span class="pc bpc" id="L323" title="1 of 2 branches missed.">        if (isStudent()) {</span>
+
+<span class="nc" id="L325">            return currentStudentId().map(Set::of).orElse(Set.of());</span>
+
+        }
+
+<span class="pc bpc" id="L329" title="1 of 2 branches missed.">        if (isGuardian()) {</span>
+
+<span class="fc" id="L331">            return new HashSet&lt;&gt;(guardianStudentIds(requireGuardianId()));</span>
+
+        }
+
+<span class="nc" id="L335">        return Set.of();</span>
+
+    }
+
+
+
+    public List&lt;Long&gt; teacherSubjectIds(Long teacherId) {
+
+<span class="fc" id="L343">        return subjectRepository.findByTeacherId(teacherId).stream()</span>
+
+<span class="fc" id="L345">                .map(Subject::getId)</span>
+
+<span class="fc" id="L347">                .toList();</span>
+
+    }
+
+
+
+    public Set&lt;Long&gt; teacherCourseIds(Long teacherId) {
+
+<span class="fc" id="L355">        Set&lt;Long&gt; courseIds = new HashSet&lt;&gt;();</span>
+
+<span class="fc" id="L357">        subjectRepository.findByTeacherId(teacherId).stream()</span>
+
+<span class="fc" id="L359">                .map(Subject::getCourseId)</span>
+
+<span class="fc" id="L361">                .filter(Objects::nonNull)</span>
+
+<span class="fc" id="L363">                .forEach(courseIds::add);</span>
+
+<span class="fc" id="L365">        courseRepository.findAll().stream()</span>
+
+<span class="fc" id="L367">                .filter(course -&gt; teacherId.equals(course.getHeadTeacherId()))</span>
+
+<span class="fc" id="L369">                .map(course -&gt; course.getId())</span>
+
+<span class="fc" id="L371">                .forEach(courseIds::add);</span>
+
+<span class="fc" id="L373">        return courseIds;</span>
+
+    }
+
+
+
+    public Set&lt;Long&gt; teacherStudentIds(Long teacherId) {
+
+<span class="fc" id="L381">        Set&lt;Long&gt; courseIds = teacherCourseIds(teacherId);</span>
+
+<span class="pc bpc" id="L383" title="1 of 2 branches missed.">        if (courseIds.isEmpty()) {</span>
+
+<span class="nc" id="L385">            return Set.of();</span>
+
+        }
+
+<span class="fc" id="L389">        return enrollmentRepository.findAll().stream()</span>
+
+<span class="fc" id="L391">                .filter(enrollment -&gt; courseIds.contains(enrollment.getCourseId()))</span>
+
+<span class="fc" id="L393">                .map(Enrollment::getStudentId)</span>
+
+<span class="fc" id="L395">                .collect(Collectors.toSet());</span>
+
+    }
+
+
+
+    public Set&lt;Long&gt; studentCourseIds(Long studentId) {
+
+<span class="fc" id="L403">        return enrollmentRepository.findByStudentId(studentId).stream()</span>
+
+<span class="fc" id="L405">                .map(Enrollment::getCourseId)</span>
+
+<span class="fc" id="L407">                .filter(Objects::nonNull)</span>
+
+<span class="fc" id="L409">                .collect(Collectors.toSet());</span>
+
+    }
+
+
+
+    public Set&lt;Long&gt; guardianCourseIds(Long guardianId) {
+
+<span class="fc" id="L417">        Set&lt;Long&gt; wardIds = new HashSet&lt;&gt;(guardianStudentIds(guardianId));</span>
+
+<span class="fc" id="L419">        return enrollmentRepository.findAll().stream()</span>
+
+<span class="fc" id="L421">                .filter(enrollment -&gt; wardIds.contains(enrollment.getStudentId()))</span>
+
+<span class="fc" id="L423">                .map(Enrollment::getCourseId)</span>
+
+<span class="fc" id="L425">                .filter(Objects::nonNull)</span>
+
+<span class="fc" id="L427">                .collect(Collectors.toSet());</span>
+
+    }
+
+
+
+    public void ensureCanReadSubject(Long subjectId) {
+
+<span class="pc bpc" id="L435" title="1 of 2 branches missed.">        if (isAdmin()) {</span>
+
+<span class="nc" id="L437">            return;</span>
+
+        }
+
+<span class="fc" id="L441">        Subject subject = subjectRepository.findById(subjectId)</span>
+
+<span class="pc" id="L443">                .orElseThrow(() -&gt; new ForbiddenException(&quot;Asignatura no encontrada&quot;));</span>
+
+<span class="fc bfc" id="L445" title="All 2 branches covered.">        if (isTeacher()) {</span>
+
+<span class="fc" id="L447">            Long teacherId = requireTeacherId();</span>
+
+<span class="fc bfc" id="L449" title="All 2 branches covered.">            if (!teacherId.equals(subject.getTeacherId())) {</span>
+
+<span class="fc" id="L451">                throw new ForbiddenException(&quot;No puede acceder a esta asignatura&quot;);</span>
+
+            }
+
+<span class="fc" id="L455">            return;</span>
+
+        }
+
+<span class="fc bfc" id="L459" title="All 2 branches covered.">        if (isStudent()) {</span>
+
+<span class="fc" id="L461">            Long selfId = requireStudentId();</span>
+
+<span class="pc bpc" id="L463" title="1 of 2 branches missed.">            if (!studentCourseIds(selfId).contains(subject.getCourseId())) {</span>
+
+<span class="nc" id="L465">                throw new ForbiddenException(&quot;No puede acceder a esta asignatura&quot;);</span>
+
+            }
+
+<span class="fc" id="L469">            return;</span>
+
+        }
+
+<span class="pc bpc" id="L473" title="1 of 2 branches missed.">        if (isGuardian()) {</span>
+
+<span class="fc" id="L475">            Long guardianId = requireGuardianId();</span>
+
+<span class="pc bpc" id="L477" title="1 of 2 branches missed.">            if (!guardianCourseIds(guardianId).contains(subject.getCourseId())) {</span>
+
+<span class="nc" id="L479">                throw new ForbiddenException(&quot;No puede acceder a esta asignatura&quot;);</span>
+
+            }
+
+<span class="fc" id="L483">            return;</span>
+
+        }
+
+<span class="nc" id="L487">        throw new ForbiddenException(&quot;No puede acceder a esta asignatura&quot;);</span>
+
+    }
+
+
+
+    public void ensureCanManageSubject(Long subjectId) {
+
+<span class="nc" id="L495">        requireTeacherForPedagogicalWrite();</span>
+
+<span class="nc" id="L497">        ensureCanReadSubject(subjectId);</span>
+
+<span class="nc" id="L499">    }</span>
+
+
+
+    public void ensureCanReadEvaluation(Long evaluationId) {
+
+<span class="pc bpc" id="L505" title="1 of 2 branches missed.">        if (isAdmin()) {</span>
+
+<span class="nc" id="L507">            return;</span>
+
+        }
+
+<span class="fc" id="L511">        Evaluation evaluation = evaluationRepository.findById(evaluationId)</span>
+
+<span class="pc" id="L513">                .orElseThrow(() -&gt; new ForbiddenException(&quot;Evaluación no encontrada&quot;));</span>
+
+<span class="fc bfc" id="L515" title="All 2 branches covered.">        if (isTeacher()) {</span>
+
+<span class="fc" id="L517">            ensureCanReadSubject(evaluation.getSubjectId());</span>
+
+<span class="fc" id="L519">            return;</span>
+
+        }
+
+<span class="fc" id="L523">        throw new ForbiddenException(&quot;No puede acceder a esta evaluación&quot;);</span>
+
+    }
+
+
+
+    public void ensureCanManageEvaluation(Long evaluationId) {
+
+<span class="fc" id="L531">        requireTeacherForPedagogicalWrite();</span>
+
+<span class="fc" id="L533">        Evaluation evaluation = evaluationRepository.findById(evaluationId)</span>
+
+<span class="pc" id="L535">                .orElseThrow(() -&gt; new ForbiddenException(&quot;Evaluación no encontrada&quot;));</span>
+
+<span class="fc" id="L537">        ensureCanReadSubject(evaluation.getSubjectId());</span>
+
+<span class="fc" id="L539">    }</span>
+
+
+
+    public void ensureCanManageEvaluationSubject(Long subjectId) {
+
+<span class="nc" id="L545">        requireTeacherForPedagogicalWrite();</span>
+
+<span class="nc" id="L547">        ensureCanReadSubject(subjectId);</span>
+
+<span class="nc" id="L549">    }</span>
+
+
+
+    public void ensureCanReadGrade(Long gradeId) {
+
+<span class="pc bpc" id="L555" title="1 of 2 branches missed.">        if (isAdmin()) {</span>
+
+<span class="nc" id="L557">            return;</span>
+
+        }
+
+<span class="fc" id="L561">        Grade grade = gradeRepository.findById(gradeId)</span>
+
+<span class="pc" id="L563">                .orElseThrow(() -&gt; new ForbiddenException(&quot;Nota no encontrada&quot;));</span>
+
+<span class="fc bfc" id="L565" title="All 2 branches covered.">        if (isTeacher()) {</span>
+
+<span class="fc" id="L567">            ensureCanReadEvaluation(grade.getEvaluationId());</span>
+
+<span class="fc" id="L569">            return;</span>
+
+        }
+
+<span class="pc bpc" id="L573" title="1 of 4 branches missed.">        if (isStudent() || isGuardian()) {</span>
+
+<span class="fc" id="L575">            ensureCanReadStudent(grade.getStudentId());</span>
+
+<span class="fc" id="L577">            return;</span>
+
+        }
+
+<span class="nc" id="L581">        throw new ForbiddenException(&quot;No puede acceder a esta nota&quot;);</span>
+
+    }
+
+
+
+    public void ensureCanManageGrade(Long gradeId) {
+
+<span class="nc" id="L589">        requireTeacherForPedagogicalWrite();</span>
+
+<span class="nc" id="L591">        Grade grade = gradeRepository.findById(gradeId)</span>
+
+<span class="nc" id="L593">                .orElseThrow(() -&gt; new ForbiddenException(&quot;Nota no encontrada&quot;));</span>
+
+<span class="nc" id="L595">        ensureCanReadEvaluation(grade.getEvaluationId());</span>
+
+<span class="nc" id="L597">    }</span>
+
+
+
+    public void ensureCanManageGradeForEvaluation(Long evaluationId) {
+
+<span class="nc" id="L603">        requireTeacherForPedagogicalWrite();</span>
+
+<span class="nc" id="L605">        ensureCanReadEvaluation(evaluationId);</span>
+
+<span class="nc" id="L607">    }</span>
+
+
+
+    public void ensureCanReadStudent(Long studentId) {
+
+<span class="fc bfc" id="L613" title="All 2 branches covered.">        if (isAdmin()) {</span>
+
+<span class="fc" id="L615">            return;</span>
+
+        }
+
+<span class="fc bfc" id="L619" title="All 2 branches covered.">        if (isStudent()) {</span>
+
+<span class="fc" id="L621">            Long selfId = requireStudentId();</span>
+
+<span class="pc bpc" id="L623" title="1 of 2 branches missed.">            if (!selfId.equals(studentId)) {</span>
+
+<span class="nc" id="L625">                throw new ForbiddenException(&quot;Solo puede consultar su propia información&quot;);</span>
+
+            }
+
+<span class="fc" id="L629">            return;</span>
+
+        }
+
+<span class="fc bfc" id="L633" title="All 2 branches covered.">        if (isGuardian()) {</span>
+
+<span class="fc" id="L635">            Long guardianId = requireGuardianId();</span>
+
+<span class="pc bpc" id="L637" title="1 of 2 branches missed.">            if (!guardianStudentIds(guardianId).contains(studentId)) {</span>
+
+<span class="nc" id="L639">                throw new ForbiddenException(&quot;No puede acceder a este estudiante&quot;);</span>
+
+            }
+
+<span class="fc" id="L643">            return;</span>
+
+        }
+
+<span class="fc" id="L647">        Long teacherId = requireTeacherId();</span>
+
+<span class="pc bpc" id="L649" title="1 of 2 branches missed.">        if (!teacherStudentIds(teacherId).contains(studentId)) {</span>
+
+<span class="nc" id="L651">            throw new ForbiddenException(&quot;No puede acceder a este estudiante&quot;);</span>
+
+        }
+
+<span class="fc" id="L655">    }</span>
+
+
+
+    public void ensureCanReadCourse(Long courseId) {
+
+<span class="pc bpc" id="L661" title="1 of 2 branches missed.">        if (isAdmin()) {</span>
+
+<span class="nc" id="L663">            return;</span>
+
+        }
+
+<span class="fc bfc" id="L667" title="All 2 branches covered.">        if (isStudent()) {</span>
+
+<span class="fc" id="L669">            Long studentId = requireStudentId();</span>
+
+<span class="pc bpc" id="L671" title="1 of 2 branches missed.">            if (!studentCourseIds(studentId).contains(courseId)) {</span>
+
+<span class="nc" id="L673">                throw new ForbiddenException(&quot;No puede acceder a este curso&quot;);</span>
+
+            }
+
+<span class="fc" id="L677">            return;</span>
+
+        }
+
+<span class="fc bfc" id="L681" title="All 2 branches covered.">        if (isGuardian()) {</span>
+
+<span class="fc" id="L683">            Long guardianId = requireGuardianId();</span>
+
+<span class="fc" id="L685">            boolean hasWardInCourse = enrollmentRepository.findAll().stream()</span>
+
+<span class="pc bpc" id="L687" title="1 of 2 branches missed.">                    .anyMatch(enrollment -&gt; courseId.equals(enrollment.getCourseId())</span>
+
+<span class="pc bpc" id="L689" title="1 of 2 branches missed.">                            &amp;&amp; guardianStudentIds(guardianId).contains(enrollment.getStudentId()));</span>
+
+<span class="pc bpc" id="L691" title="1 of 2 branches missed.">            if (!hasWardInCourse) {</span>
+
+<span class="nc" id="L693">                throw new ForbiddenException(&quot;No puede acceder a este curso&quot;);</span>
+
+            }
+
+<span class="fc" id="L697">            return;</span>
+
+        }
+
+<span class="fc" id="L701">        Long teacherId = requireTeacherId();</span>
+
+<span class="pc bpc" id="L703" title="1 of 2 branches missed.">        if (!teacherCourseIds(teacherId).contains(courseId)) {</span>
+
+<span class="nc" id="L705">            throw new ForbiddenException(&quot;No puede acceder a este curso&quot;);</span>
+
+        }
+
+<span class="fc" id="L709">    }</span>
+
+
+
+    public void ensureCanReadTeacher(Long teacherId) {
+
+<span class="pc bpc" id="L715" title="1 of 2 branches missed.">        if (isAdmin()) {</span>
+
+<span class="nc" id="L717">            return;</span>
+
+        }
+
+<span class="fc" id="L721">        Long currentId = requireTeacherId();</span>
+
+<span class="fc bfc" id="L723" title="All 2 branches covered.">        if (!currentId.equals(teacherId)) {</span>
+
+<span class="fc" id="L725">            throw new ForbiddenException(&quot;Solo puede ver su propio perfil docente&quot;);</span>
+
+        }
+
+<span class="fc" id="L729">    }</span>
+
+
+
+    private Optional&lt;JwtUserPrincipal&gt; currentPrincipal() {
+
+<span class="fc" id="L735">        Authentication auth = SecurityContextHolder.getContext().getAuthentication();</span>
+
+<span class="pc bpc" id="L737" title="2 of 4 branches missed.">        if (auth == null || auth.getPrincipal() == null) {</span>
+
+<span class="nc" id="L739">            return Optional.empty();</span>
+
+        }
+
+<span class="pc bpc" id="L743" title="1 of 2 branches missed.">        if (auth.getPrincipal() instanceof JwtUserPrincipal principal) {</span>
+
+<span class="fc" id="L745">            return Optional.of(principal);</span>
+
+        }
+
+<span class="nc" id="L749">        return Optional.empty();</span>
+
+    }
+
+
+
+    private Optional&lt;Teacher&gt; resolveTeacher(JwtUserPrincipal principal) {
+
+<span class="pc bpc" id="L757" title="1 of 2 branches missed.">        if (principal.getUserId() != null) {</span>
+
+<span class="fc" id="L759">            Optional&lt;Teacher&gt; byUserId = teacherRepository.findByUserId(principal.getUserId());</span>
+
+<span class="pc bpc" id="L761" title="1 of 2 branches missed.">            if (byUserId.isPresent()) {</span>
+
+<span class="fc" id="L763">                return byUserId;</span>
+
+            }
+
+        }
+
+<span class="nc" id="L769">        return teacherRepository.findByAuthUsername(principal.getUsername());</span>
+
+    }
+
+
+
+    private Optional&lt;Student&gt; resolveStudent(JwtUserPrincipal principal) {
+
+<span class="fc bfc" id="L777" title="All 2 branches covered.">        if (principal.getUserId() != null) {</span>
+
+<span class="fc" id="L779">            Optional&lt;Student&gt; byUserId = studentRepository.findByUserId(principal.getUserId());</span>
+
+<span class="pc bpc" id="L781" title="1 of 2 branches missed.">            if (byUserId.isPresent()) {</span>
+
+<span class="fc" id="L783">                return byUserId;</span>
+
+            }
+
+        }
+
+<span class="pc bpc" id="L789" title="2 of 4 branches missed.">        if (principal.getEmail() != null &amp;&amp; !principal.getEmail().isBlank()) {</span>
+
+<span class="fc" id="L791">            return studentRepository.findByEmailIgnoreCase(principal.getEmail().trim());</span>
+
+        }
+
+<span class="nc" id="L795">        return Optional.empty();</span>
+
+    }
+
+
+
+    private Optional&lt;Guardian&gt; resolveGuardian(JwtUserPrincipal principal) {
+
+<span class="pc bpc" id="L803" title="1 of 2 branches missed.">        if (principal.getUserId() != null) {</span>
+
+<span class="fc" id="L805">            Optional&lt;Guardian&gt; byUserId = guardianRepository.findByUserId(principal.getUserId());</span>
+
+<span class="pc bpc" id="L807" title="1 of 2 branches missed.">            if (byUserId.isPresent()) {</span>
+
+<span class="fc" id="L809">                return byUserId;</span>
+
+            }
+
+        }
+
+<span class="nc bnc" id="L815" title="All 4 branches missed.">        if (principal.getEmail() != null &amp;&amp; !principal.getEmail().isBlank()) {</span>
+
+<span class="nc" id="L817">            return guardianRepository.findByEmailIgnoreCase(principal.getEmail().trim());</span>
+
+        }
+
+<span class="nc" id="L821">        return Optional.empty();</span>
+
+    }
+
+
+
+    private boolean hasRole(String role) {
+
+<span class="fc" id="L829">        Authentication auth = SecurityContextHolder.getContext().getAuthentication();</span>
+
+<span class="fc bfc" id="L831" title="All 2 branches covered.">        if (auth == null) {</span>
+
+<span class="fc" id="L833">            return false;</span>
+
+        }
+
+<span class="fc" id="L837">        String roleAuthority = &quot;ROLE_&quot; + role;</span>
+
+<span class="fc" id="L839">        return auth.getAuthorities().stream()</span>
+
+<span class="fc" id="L841">                .map(GrantedAuthority::getAuthority)</span>
+
+<span class="pc bpc" id="L843" title="1 of 4 branches missed.">                .anyMatch(authority -&gt; authority.equals(roleAuthority) || authority.equals(role));</span>
+
+    }
+
+}
+
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

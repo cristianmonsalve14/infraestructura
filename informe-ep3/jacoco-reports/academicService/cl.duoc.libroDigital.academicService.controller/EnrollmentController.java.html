@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EnrollmentController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.academicService.controller</a> &gt; <span class="el_source">EnrollmentController.java</span></div><h1>EnrollmentController.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.academicService.controller;
+
+import cl.duoc.libroDigital.academicService.model.Enrollment;
+import cl.duoc.libroDigital.academicService.dto.EnrollmentDTO;
+import cl.duoc.libroDigital.academicService.repository.StudentRepository;
+import cl.duoc.libroDigital.academicService.service.CatalogLookupService;
+import cl.duoc.libroDigital.academicService.service.EnrollmentService;
+import cl.duoc.libroDigital.academicService.security.AcademicAccessService;
+
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping(&quot;/enrollments&quot;)
+public class EnrollmentController {
+
+    private final EnrollmentService enrollmentService;
+    private final CatalogLookupService catalogs;
+    private final AcademicAccessService access;
+    private final StudentRepository studentRepository;
+
+<span class="fc" id="L25">    public EnrollmentController(</span>
+            EnrollmentService enrollmentService,
+            CatalogLookupService catalogs,
+            AcademicAccessService access,
+            StudentRepository studentRepository) {
+<span class="fc" id="L30">        this.enrollmentService = enrollmentService;</span>
+<span class="fc" id="L31">        this.catalogs = catalogs;</span>
+<span class="fc" id="L32">        this.access = access;</span>
+<span class="fc" id="L33">        this.studentRepository = studentRepository;</span>
+<span class="fc" id="L34">    }</span>
+
+    private EnrollmentDTO toDTO(Enrollment e) {
+<span class="fc" id="L37">        EnrollmentDTO dto = new EnrollmentDTO();</span>
+<span class="fc" id="L38">        dto.setId(e.getId());</span>
+<span class="fc" id="L39">        dto.setStudentId(e.getStudentId());</span>
+<span class="fc" id="L40">        dto.setCourseId(e.getCourseId());</span>
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">        if (e.getStudentId() != null) {</span>
+<span class="fc" id="L42">            studentRepository.findById(e.getStudentId())</span>
+<span class="fc" id="L43">                    .ifPresent(student -&gt; dto.setEnrollmentNumber(student.getEnrollmentNumber()));</span>
+        }
+<span class="fc" id="L45">        dto.setEnrollmentDate(e.getEnrollmentDate());</span>
+<span class="fc" id="L46">        dto.setAcademicYear(catalogs.academicYearValue(e.getAcademicYearId()));</span>
+<span class="fc" id="L47">        dto.setEnrollmentStatus(catalogs.code(&quot;enrollment_statuses&quot;, e.getEnrollmentStatusId()));</span>
+<span class="fc" id="L48">        dto.setIsRegular(e.getIsRegular());</span>
+<span class="fc" id="L49">        dto.setObservations(e.getObservations());</span>
+<span class="fc" id="L50">        dto.setCreatedAt(e.getCreatedAt());</span>
+<span class="fc" id="L51">        dto.setUpdatedAt(e.getUpdatedAt());</span>
+<span class="fc" id="L52">        return dto;</span>
+    }
+
+    private Enrollment toEntity(EnrollmentDTO dto) {
+<span class="fc" id="L56">        Enrollment e = new Enrollment();</span>
+<span class="fc" id="L57">        e.setId(dto.getId());</span>
+<span class="fc" id="L58">        e.setStudentId(dto.getStudentId());</span>
+<span class="fc" id="L59">        e.setCourseId(dto.getCourseId());</span>
+<span class="fc" id="L60">        e.setEnrollmentDate(dto.getEnrollmentDate());</span>
+<span class="fc" id="L61">        e.setAcademicYearId(catalogs.academicYearIdFromYear(dto.getAcademicYear()));</span>
+<span class="fc" id="L62">        e.setEnrollmentStatusId(catalogs.requireId(&quot;enrollment_statuses&quot;, dto.getEnrollmentStatus()));</span>
+<span class="fc" id="L63">        e.setIsRegular(dto.getIsRegular());</span>
+<span class="fc" id="L64">        e.setObservations(dto.getObservations());</span>
+<span class="fc" id="L65">        return e;</span>
+    }
+
+    @PostMapping
+    public EnrollmentDTO createEnrollment(@RequestBody EnrollmentDTO dto) {
+<span class="fc" id="L70">        access.requireAdmin();</span>
+<span class="fc" id="L71">        return toDTO(enrollmentService.createEnrollment(toEntity(dto)));</span>
+    }
+
+    @GetMapping(&quot;/student/{studentId}&quot;)
+    public List&lt;EnrollmentDTO&gt; getEnrollmentsByStudent(@PathVariable Long studentId) {
+<span class="nc" id="L76">        access.ensureCanReadStudent(studentId);</span>
+<span class="nc" id="L77">        return enrollmentService.getEnrollmentsByStudent(studentId).stream()</span>
+<span class="nc" id="L78">                .map(this::toDTO)</span>
+<span class="nc" id="L79">                .collect(Collectors.toList());</span>
+    }
+
+    @GetMapping
+    public List&lt;EnrollmentDTO&gt; getAllEnrollments() {
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">        if (access.isAdmin()) {</span>
+<span class="nc" id="L85">            return enrollmentService.getAllEnrollments().stream().map(this::toDTO).collect(Collectors.toList());</span>
+        }
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">        if (access.isStudent()) {</span>
+<span class="nc" id="L88">            Long studentId = access.requireStudentId();</span>
+<span class="nc" id="L89">            return enrollmentService.getEnrollmentsByStudent(studentId).stream()</span>
+<span class="nc" id="L90">                    .map(this::toDTO)</span>
+<span class="nc" id="L91">                    .collect(Collectors.toList());</span>
+        }
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">        if (access.isGuardian()) {</span>
+<span class="fc" id="L94">            Long guardianId = access.requireGuardianId();</span>
+<span class="fc" id="L95">            return enrollmentService.getAllEnrollments().stream()</span>
+<span class="fc" id="L96">                    .filter(enrollment -&gt; access.guardianStudentIds(guardianId).contains(enrollment.getStudentId()))</span>
+<span class="fc" id="L97">                    .map(this::toDTO)</span>
+<span class="fc" id="L98">                    .collect(Collectors.toList());</span>
+        }
+<span class="nc" id="L100">        Long teacherId = access.requireTeacherId();</span>
+<span class="nc" id="L101">        Set&lt;Long&gt; courseIds = access.teacherCourseIds(teacherId);</span>
+<span class="nc" id="L102">        return enrollmentService.getAllEnrollments().stream()</span>
+<span class="nc" id="L103">                .filter(enrollment -&gt; courseIds.contains(enrollment.getCourseId()))</span>
+<span class="nc" id="L104">                .map(this::toDTO)</span>
+<span class="nc" id="L105">                .collect(Collectors.toList());</span>
+    }
+
+    @GetMapping(&quot;/{id}&quot;)
+    public EnrollmentDTO getEnrollment(@PathVariable Long id) {
+<span class="fc" id="L110">        Enrollment enrollment = enrollmentService.getEnrollmentById(id)</span>
+<span class="fc" id="L111">                .orElse(null);</span>
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">        if (enrollment == null) {</span>
+<span class="fc" id="L113">            return null;</span>
+        }
+<span class="nc" id="L115">        access.ensureCanReadStudent(enrollment.getStudentId());</span>
+<span class="nc" id="L116">        return toDTO(enrollment);</span>
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    public EnrollmentDTO updateEnrollment(@PathVariable Long id, @RequestBody EnrollmentDTO dto) {
+<span class="nc" id="L121">        access.requireAdmin();</span>
+<span class="nc" id="L122">        return toDTO(enrollmentService.updateEnrollment(id, toEntity(dto)));</span>
+    }
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    public void deleteEnrollment(@PathVariable Long id) {
+<span class="nc" id="L127">        access.requireAdmin();</span>
+<span class="nc" id="L128">        enrollmentService.deleteEnrollment(id);</span>
+<span class="nc" id="L129">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

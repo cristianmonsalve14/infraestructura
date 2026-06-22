@@ -8,9 +8,12 @@ Plataforma de gestión académica desarrollada para el ramo **Fullstack III**, b
 
 El sistema está compuesto por:
 
-- ✅ Frontend React (UI)
-- ✅ Microservicio académico (gestión de datos)
-- ✅ Microservicio de autenticación (JWT)
+- ✅ **frontend-react** — UI React (puerto 8094)
+- ✅ **apiGetaway** — API Gateway (puerto 8090)
+- ✅ **authService** — autenticación y usuarios JWT (8091)
+- ✅ **academicService** — gestión académica (8092)
+- ✅ **attendanceService** — asistencia y anotaciones (8093)
+- ✅ **frontend** — módulo Spring Boot reservado (scaffold; la UI activa es `frontend-react`)
 
 Cada componente es independiente y se comunica mediante API REST.
 
@@ -20,7 +23,7 @@ Cada componente es independiente y se comunica mediante API REST.
 
 ### 🔧 Backend
 - Java 21
-- Spring Boot 4.0.5
+- Spring Boot 4.1.0
 - Spring Security + JWT
 - PostgreSQL
 - Maven
@@ -46,8 +49,9 @@ Cada componente es independiente y se comunica mediante API REST.
 ✅ Matrículas de estudiantes en cursos  
 ✅ Evaluaciones académicas  
 ✅ Registro de notas (escala chilena 1.0 - 7.0)  
+✅ Control de asistencia y anotaciones  
+✅ API Gateway centralizado  
 ✅ Autenticación segura mediante JWT  
-✅ Protección de rutas backend  
 
 ---
 
@@ -79,9 +83,9 @@ Ver detalle en `docs/puertos.md`.
 
 ---
 
-### 🟢 Frontend
+### 🟢 Frontend (UI activa)
 
-Ejecutar:
+Ejecutar en la carpeta **frontend-react**:
 
 npm install  
 npm run dev  
@@ -141,14 +145,14 @@ Authorization: Bearer {token}
 ## 🏗️ Estructura del Proyecto
 
 .
-├── frontend-react/  
-├── academicService/  
-│   ├── controller  
-│   ├── service  
-│   ├── repository  
-│   └── model  
-├── authService/  
-├── ddl/  
+├── frontend-react/     # UI React + Vite (puerto 8094)
+├── frontend/           # Módulo Spring Boot (scaffold)
+├── apiGetaway/
+├── authService/
+├── academicService/
+├── attendanceService/
+├── ddl/
+└── docs/
 
 ---
 
@@ -201,21 +205,16 @@ Contiene los enlaces a los repositorios del proyecto (frontend y microservicios)
 Documento que describe los patrones de diseño aplicados en el sistema, como Repository, DTO, Service Layer y MVC, incluyendo su justificación y beneficios.
 
 - **arquitectura.md**  
-Documento técnico que incluye:
-Arquitectura de microservicios  
-Modelo de datos  
-Diagramas (PlantUML)  
-Definición de base de datos (DDL)  
-Estrategia de seguridad con JWT  
-Descripción de componentes del sistema  
+Arquitectura de microservicios, flujos, stack y diagramas.
+
+- **diagrams/README.md**  
+Índice de diagramas PlantUML vigentes y archivados.
 
 - **guia_proyecto.md**  
-Informe general del proyecto con:
-Descripción del problema  
-Objetivos  
-Metodología SCRUM  
-Plan de trabajo  
-Justificación técnica  
+Informe académico: problema, objetivos, metodología SCRUM y contexto del ramo.
+
+- **archive/**  
+Material histórico (SQL monolítico, diagramas antiguos, snapshots). No usar en desarrollo actual.
 
 ---
 

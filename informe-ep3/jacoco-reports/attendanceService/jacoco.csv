@@ -1,0 +1,17 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+attendanceService,cl.duoc.libroDigital.attendanceService.controller,AnnotationController,97,153,9,5,26,37,11,6,4,6
+attendanceService,cl.duoc.libroDigital.attendanceService.controller,AttendanceController,0,271,0,4,0,66,0,15,0,13
+attendanceService,cl.duoc.libroDigital.attendanceService.controller,ClassSessionController,107,178,10,4,25,43,12,7,5,7
+attendanceService,cl.duoc.libroDigital.attendanceService.service.impl,AnnotationServiceImpl,12,96,5,5,0,21,5,10,0,10
+attendanceService,cl.duoc.libroDigital.attendanceService.service.impl,AttendanceRecordServiceImpl,8,134,5,7,2,32,5,14,0,13
+attendanceService,cl.duoc.libroDigital.attendanceService.service.impl,ClassSessionServiceImpl,77,46,12,0,18,11,11,6,5,6
+attendanceService,cl.duoc.libroDigital.attendanceService.service,AttendanceCatalogService,8,137,6,12,3,39,6,11,0,8
+attendanceService,cl.duoc.libroDigital.attendanceService.util,JwtUtil,19,80,8,4,4,24,6,7,0,7
+attendanceService,cl.duoc.libroDigital.attendanceService.security,JwtUserPrincipal,21,0,0,0,8,0,4,0,4,0
+attendanceService,cl.duoc.libroDigital.attendanceService.security,AttendanceAccessService,26,229,7,23,6,62,9,29,2,21
+attendanceService,cl.duoc.libroDigital.attendanceService.validation,AttendanceEntityValidator,0,163,2,32,0,35,2,21,0,6
+attendanceService,cl.duoc.libroDigital.attendanceService.exception,NotFoundException,0,4,0,0,0,2,0,1,0,1
+attendanceService,cl.duoc.libroDigital.attendanceService.exception,BadRequestException,0,4,0,0,0,2,0,1,0,1
+attendanceService,cl.duoc.libroDigital.attendanceService.exception,ConflictException,0,4,0,0,0,2,0,1,0,1
+attendanceService,cl.duoc.libroDigital.attendanceService.exception,GlobalExceptionHandler,0,35,0,0,0,9,0,5,0,5
+attendanceService,cl.duoc.libroDigital.attendanceService.exception,ForbiddenException,0,4,0,0,0,2,0,1,0,1

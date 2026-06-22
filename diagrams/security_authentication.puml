@@ -16,7 +16,7 @@ activate Gateway
 Gateway -> AuthService: Enruta peticion
 activate AuthService
 
-AuthService -> Database: SELECT usuario WHERE correo = ?
+AuthService -> Database: SELECT usuario WHERE username = ?
 activate Database
 Database --> AuthService: Retorna usuario
 deactivate Database

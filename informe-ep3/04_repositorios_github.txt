@@ -1,0 +1,48 @@
+================================================================================
+REPOSITORIOS GITHUB — Libro Digital (Evaluación Parcial N°3)
+Equipo: Cristian Monsalve / Héctor Olivares
+Asignatura: DSY1106 — Desarrollo Fullstack III
+Fecha: 2026-06-20
+================================================================================
+
+REPOSITORIO PRINCIPAL (documentación e infraestructura)
+  URL:    https://github.com/cristianmonsalve14/infraestructura
+  Carpeta: infraestructura/
+  Contiene: diagramas de arquitectura y ER, scripts DDL, documentación técnica,
+            colección Postman, guías de despliegue y este informe EP3.
+
+REPOSITORIO FRONTEND
+  URL:    https://github.com/cristianmonsalve14/frontend-react
+  Carpeta: frontend-react/
+  Contiene: aplicación React + TypeScript + Vite + Tailwind. Consume la API
+            exclusivamente a través del API Gateway (puerto 8090).
+
+REPOSITORIOS DE MICROSERVICIOS (backend con persistencia JPA)
+
+  1. API Gateway
+     URL:    https://github.com/cristianmonsalve14/apiGetaway
+     Puerto: 8090
+     Rol:    Enrutamiento centralizado hacia auth, academic y attendance.
+
+  2. Auth Service
+     URL:    https://github.com/cristianmonsalve14/authService
+     Puerto: 8091
+     BD:     librodigital_auth (PostgreSQL)
+     Rol:    Autenticación JWT, usuarios, roles RBAC.
+
+  3. Academic Service
+     URL:    https://github.com/cristianmonsalve14/academicService
+     Puerto: 8092
+     BD:     librodigital_academic (PostgreSQL)
+     Rol:    Estudiantes, docentes, cursos, matrículas, evaluaciones, notas.
+
+  4. Attendance Service
+     URL:    https://github.com/cristianmonsalve14/attendanceService
+     Puerto: 8093
+     BD:     librodigital_attendance (PostgreSQL)
+     Rol:    Sesiones de clase, registro de asistencia y anotaciones.
+
+================================================================================
+NOTA: El workspace local agrupa todos los módulos en un solo directorio para
+desarrollo; en GitHub cada componente está versionado en su repositorio propio.
+================================================================================

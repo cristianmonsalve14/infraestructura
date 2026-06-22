@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">authService</a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.authService.service.impl</a> &gt; <span class="el_source">AuthServiceImpl.java</span></div><h1>AuthServiceImpl.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.authService.service.impl;
+
+import cl.duoc.libroDigital.authService.dto.LoginRequest;
+import cl.duoc.libroDigital.authService.dto.RegisterRequest;
+import cl.duoc.libroDigital.authService.dto.AuthResponse;
+import cl.duoc.libroDigital.authService.dto.UserProfileDTO;
+import cl.duoc.libroDigital.authService.model.User;
+import cl.duoc.libroDigital.authService.repository.UserRepository;
+import cl.duoc.libroDigital.authService.service.AuthService;
+import cl.duoc.libroDigital.authService.util.JwtUtil;
+
+import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Service
+public class AuthServiceImpl implements AuthService {
+
+    private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
+    private final PasswordEncoder passwordEncoder;
+
+<span class="fc" id="L25">    public AuthServiceImpl(</span>
+            UserRepository userRepository,
+            JwtUtil jwtUtil,
+            PasswordEncoder passwordEncoder) {
+<span class="fc" id="L29">        this.userRepository = userRepository;</span>
+<span class="fc" id="L30">        this.jwtUtil = jwtUtil;</span>
+<span class="fc" id="L31">        this.passwordEncoder = passwordEncoder;</span>
+<span class="fc" id="L32">    }</span>
+
+    @Override
+    public AuthResponse login(LoginRequest request) {
+<span class="fc" id="L36">        User user = userRepository.findByUsername(request.getUsername())</span>
+<span class="fc" id="L37">                .orElseThrow(() -&gt; new RuntimeException(&quot;Usuario o contraseña incorrectos&quot;));</span>
+
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {</span>
+<span class="fc" id="L40">            throw new RuntimeException(&quot;Usuario o contraseña incorrectos&quot;);</span>
+        }
+
+<span class="fc" id="L43">        return buildAuthResponse(user);</span>
+    }
+
+    @Override
+    public AuthResponse register(RegisterRequest request) {
+<span class="fc" id="L48">        throw new RuntimeException(</span>
+<span class="fc" id="L49">                &quot;Registro público deshabilitado. Solicite acceso al administrador del colegio.&quot;);</span>
+    }
+
+    @Override
+    public AuthResponse refreshToken(String refreshToken) {
+<span class="fc" id="L54">        String username = jwtUtil.extractUsername(refreshToken);</span>
+<span class="fc" id="L55">        User user = userRepository.findByUsername(username)</span>
+<span class="pc" id="L56">                .orElseThrow(() -&gt; new RuntimeException(&quot;Token inválido&quot;));</span>
+
+<span class="fc" id="L58">        AuthResponse response = buildAuthResponse(user);</span>
+<span class="fc" id="L59">        response.setRefreshToken(refreshToken);</span>
+<span class="fc" id="L60">        return response;</span>
+    }
+
+    @Override
+    public UserProfileDTO getProfile(String username) {
+<span class="fc" id="L65">        User user = userRepository.findByUsername(username)</span>
+<span class="pc" id="L66">                .orElseThrow(() -&gt; new RuntimeException(&quot;Usuario no encontrado&quot;));</span>
+<span class="fc" id="L67">        return toProfile(user);</span>
+    }
+
+    private AuthResponse buildAuthResponse(User user) {
+<span class="fc" id="L71">        AuthResponse response = new AuthResponse();</span>
+<span class="fc" id="L72">        response.setAccessToken(jwtUtil.generateToken(user));</span>
+<span class="fc" id="L73">        response.setRefreshToken(jwtUtil.generateRefreshToken(user));</span>
+<span class="fc" id="L74">        response.setUserId(user.getId());</span>
+<span class="fc" id="L75">        response.setUsername(user.getUsername());</span>
+<span class="fc" id="L76">        response.setEmail(user.getEmail());</span>
+<span class="fc" id="L77">        response.setRoles(extractRoleNames(user));</span>
+<span class="fc" id="L78">        return response;</span>
+    }
+
+    private UserProfileDTO toProfile(User user) {
+<span class="fc" id="L82">        UserProfileDTO profile = new UserProfileDTO();</span>
+<span class="fc" id="L83">        profile.setUserId(user.getId());</span>
+<span class="fc" id="L84">        profile.setUsername(user.getUsername());</span>
+<span class="fc" id="L85">        profile.setEmail(user.getEmail());</span>
+<span class="fc" id="L86">        profile.setRoles(extractRoleNames(user));</span>
+<span class="fc" id="L87">        return profile;</span>
+    }
+
+    private Set&lt;String&gt; extractRoleNames(User user) {
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">        if (user.getRoles() == null) {</span>
+<span class="nc" id="L92">            return Set.of();</span>
+        }
+<span class="fc" id="L94">        return user.getRoles().stream()</span>
+<span class="fc" id="L95">                .map(role -&gt; role.getName())</span>
+<span class="fc" id="L96">                .collect(Collectors.toSet());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

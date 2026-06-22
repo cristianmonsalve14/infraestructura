@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminUserServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">authService</a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.authService.service.impl</a> &gt; <span class="el_source">AdminUserServiceImpl.java</span></div><h1>AdminUserServiceImpl.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.authService.service.impl;
+
+import cl.duoc.libroDigital.authService.dto.CreateAdminUserRequest;
+import cl.duoc.libroDigital.authService.model.Role;
+import cl.duoc.libroDigital.authService.model.User;
+import cl.duoc.libroDigital.authService.repository.RoleRepository;
+import cl.duoc.libroDigital.authService.repository.UserRepository;
+import cl.duoc.libroDigital.authService.service.AdminUserService;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.Locale;
+import java.util.Set;
+
+@Service
+public class AdminUserServiceImpl implements AdminUserService {
+
+<span class="fc" id="L19">    private static final Set&lt;String&gt; ALLOWED_ROLES = Set.of(&quot;DOCENTE&quot;, &quot;APODERADO&quot;, &quot;ESTUDIANTE&quot;);</span>
+
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+
+<span class="fc" id="L25">    public AdminUserServiceImpl(</span>
+            UserRepository userRepository,
+            RoleRepository roleRepository,
+            PasswordEncoder passwordEncoder) {
+<span class="fc" id="L29">        this.userRepository = userRepository;</span>
+<span class="fc" id="L30">        this.roleRepository = roleRepository;</span>
+<span class="fc" id="L31">        this.passwordEncoder = passwordEncoder;</span>
+<span class="fc" id="L32">    }</span>
+
+    @Override
+    public User createUser(CreateAdminUserRequest request) {
+<span class="pc bpc" id="L36" title="1 of 4 branches missed.">        if (request.getUsername() == null || request.getUsername().isBlank()) {</span>
+<span class="fc" id="L37">            throw new IllegalArgumentException(&quot;El nombre de usuario es obligatorio&quot;);</span>
+        }
+<span class="pc bpc" id="L39" title="2 of 4 branches missed.">        if (request.getEmail() == null || request.getEmail().isBlank()) {</span>
+<span class="nc" id="L40">            throw new IllegalArgumentException(&quot;El email es obligatorio&quot;);</span>
+        }
+<span class="pc bpc" id="L42" title="1 of 4 branches missed.">        if (request.getPassword() == null || request.getPassword().length() &lt; 8) {</span>
+<span class="fc" id="L43">            throw new IllegalArgumentException(&quot;La contraseña debe tener al menos 8 caracteres&quot;);</span>
+        }
+<span class="pc bpc" id="L45" title="2 of 4 branches missed.">        if (request.getRole() == null || request.getRole().isBlank()) {</span>
+<span class="nc" id="L46">            throw new IllegalArgumentException(&quot;El rol es obligatorio&quot;);</span>
+        }
+
+<span class="fc" id="L49">        String roleName = request.getRole().trim().toUpperCase(Locale.ROOT);</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (&quot;ADMINISTRADOR&quot;.equals(roleName)) {</span>
+<span class="fc" id="L51">            throw new IllegalArgumentException(&quot;No se puede crear un usuario ADMINISTRADOR desde la aplicación&quot;);</span>
+        }
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">        if (!ALLOWED_ROLES.contains(roleName)) {</span>
+<span class="nc" id="L54">            throw new IllegalArgumentException(&quot;Rol no permitido: &quot; + roleName);</span>
+        }
+
+<span class="fc" id="L57">        String username = request.getUsername().trim();</span>
+<span class="fc" id="L58">        String email = request.getEmail().trim();</span>
+
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        if (userRepository.findByUsername(username).isPresent()) {</span>
+<span class="fc" id="L61">            throw new IllegalArgumentException(&quot;El nombre de usuario ya está en uso&quot;);</span>
+        }
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if (userRepository.findByEmailIgnoreCase(email).isPresent()) {</span>
+<span class="fc" id="L64">            throw new IllegalArgumentException(&quot;El email ya está registrado en una cuenta de acceso&quot;);</span>
+        }
+
+<span class="fc" id="L67">        Role role = roleRepository.findByName(roleName)</span>
+<span class="pc" id="L68">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Rol no encontrado: &quot; + roleName));</span>
+
+<span class="fc" id="L70">        User user = new User();</span>
+<span class="fc" id="L71">        user.setUsername(username);</span>
+<span class="fc" id="L72">        user.setEmail(email);</span>
+<span class="fc" id="L73">        user.setPassword(passwordEncoder.encode(request.getPassword()));</span>
+<span class="fc" id="L74">        user.setEnabled(true);</span>
+<span class="fc" id="L75">        user.setRoles(Set.of(role));</span>
+<span class="fc" id="L76">        user.setCreatedAt(LocalDateTime.now());</span>
+<span class="fc" id="L77">        user.setUpdatedAt(LocalDateTime.now());</span>
+
+<span class="fc" id="L79">        return userRepository.save(user);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

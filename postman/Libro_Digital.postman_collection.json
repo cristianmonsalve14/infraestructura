@@ -1,31 +1,19 @@
 {
   "info": {
     "name": "Libro Digital — API Gateway",
-    "description": "Colección para probar auth, academic y attendance vía apiGetaway (:8090).\n\nUsuario de prueba:\n- username: postman_test\n- password: test1234\n\n1. Ejecutar 'Login' para guardar el token automáticamente.\n2. El resto de requests usa {{token}} en Authorization.",
+    "description": "Colección para probar auth, academic y attendance vía apiGetaway (:8090).\n\nUsuario demo por defecto:\n- username: admin_colegio\n- password: test1234\n\n1. Ejecutar 'Login' para guardar el token automáticamente.\n2. El resto de requests usa {{token}} en Authorization.\n\nNota: POST /auth/register está deshabilitado.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:8090" },
     { "key": "token", "value": "" },
-    { "key": "username", "value": "postman_test" },
+    { "key": "username", "value": "admin_colegio" },
     { "key": "password", "value": "test1234" }
   ],
   "item": [
     {
       "name": "Auth",
       "item": [
-        {
-          "name": "Register",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"nuevo_usuario\",\n  \"password\": \"test1234\",\n  \"email\": \"nuevo@test.com\"\n}"
-            },
-            "url": "{{baseUrl}}/auth/register"
-          }
-        },
         {
           "name": "Login",
           "event": [

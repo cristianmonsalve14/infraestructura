@@ -35,7 +35,8 @@ Cada componente del sistema fue desarrollado en su propia rama:
 - develop-apiGetaway  
 - develop-authService  
 - develop-academicService  
-- develop-react  
+- develop-attendanceService
+- develop-react (frontend-react)  
 - develop-infraestructura  
 
 Estas ramas permiten trabajar de manera independiente en cada módulo del sistema.
@@ -57,8 +58,10 @@ Estas ramas permiten trabajar de manera independiente en cada módulo del sistem
 main  
 ├── develop-apiGetaway  
 ├── develop-authService  
-├── develop-academicService  
-├── develop-react  
+├── develop-academicService
+├── develop-attendanceService
+├── develop-attendanceService
+├── develop-react
 └── develop-infraestructura  
 
 ---

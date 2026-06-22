@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>01_arquitectura_microservicios</title>
+  <style>
+  @page { margin: 18mm 16mm; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: #1f2937;
+    line-height: 1.55;
+    font-size: 11pt;
+    max-width: 100%;
+  }
+  h1 { color: #1e3a8a; font-size: 22pt; border-bottom: 2px solid #dbeafe; padding-bottom: 8px; }
+  h2 { color: #1d4ed8; font-size: 15pt; margin-top: 1.4em; }
+  h3 { color: #2563eb; font-size: 12.5pt; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 10pt; }
+  th, td { border: 1px solid #d1d5db; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #eff6ff; }
+  code { background: #f3f4f6; padding: 1px 4px; border-radius: 4px; font-size: 9.5pt; }
+  pre { background: #111827; color: #f9fafb; padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 9pt; }
+  pre code { background: transparent; color: inherit; }
+  img { max-width: 100%; height: auto; margin: 12px 0; }
+  blockquote { border-left: 4px solid #93c5fd; margin: 12px 0; padding: 4px 12px; color: #4b5563; }
+  hr { border: none; border-top: 1px solid #e5e7eb; margin: 20px 0; }
+</style>
+</head>
+<body><h1>01 — Arquitectura de Microservicios</h1>
+<p><strong>Proyecto:</strong> Plataforma Libro de Clases Digital<br><strong>Asignatura:</strong> DSY1106 — Desarrollo Fullstack III<br><strong>Evaluación:</strong> Parcial N°3 — Encargo<br><strong>Equipo:</strong> Cristian Monsalve / Héctor Olivares  </p>
+<hr>
+<h2>1. Resumen ejecutivo</h2>
+<p>El sistema implementa una <strong>arquitectura de microservicios</strong> para la gestión académica de un colegio: autenticación centralizada, dominio académico (estudiantes, cursos, notas) y dominio de asistencia (sesiones, registros, anotaciones). Todos los servicios backend se exponen al exterior a través de un <strong>API Gateway</strong>, y el <strong>frontend React</strong> consume únicamente ese punto de entrada.</p>
+<p>La comunicación entre capas es <strong>REST sobre HTTP/JSON</strong>. Cada microservicio persiste en su <strong>propia base PostgreSQL</strong> (patrón <em>Database per Service</em>), sin claves foráneas entre bases distintas.</p>
+<hr>
+<h2>2. Diagrama de arquitectura</h2>
+<p><img src="diagramas/architecture_patterns_simple.png" alt="Diagrama de arquitectura y patrones"></p>
+<p><em>Fuente editable:</em> <code>infraestructura/diagrams/architecture_patterns_simple.puml</code></p>
+<p>El diagrama muestra:</p>
+<ul>
+<li><strong>Cliente web</strong> (<code>frontend-react</code>, puerto 8094)</li>
+<li><strong>API Gateway</strong> (<code>apiGetaway</code>, puerto 8090) como único punto de entrada</li>
+<li><strong>Tres microservicios</strong> backend con sus bases de datos dedicadas</li>
+<li>Patrones aplicados: API Gateway, Database per Service, Repository, DTO, Service Layer, MVC</li>
+</ul>
+<hr>
+<h2>3. Componentes del sistema</h2>
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th>Carpeta</th>
+<th>Puerto</th>
+<th>Responsabilidad</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>API Gateway</td>
+<td><code>apiGetaway/</code></td>
+<td>8090</td>
+<td>Enrutamiento, CORS, proxy hacia microservicios</td>
+</tr>
+<tr>
+<td>Auth Service</td>
+<td><code>authService/</code></td>
+<td>8091</td>
+<td>Login, JWT, usuarios, roles (RBAC)</td>
+</tr>
+<tr>
+<td>Academic Service</td>
+<td><code>academicService/</code></td>
+<td>8092</td>
+<td>Estudiantes, docentes, cursos, matrículas, evaluaciones, notas</td>
+</tr>
+<tr>
+<td>Attendance Service</td>
+<td><code>attendanceService/</code></td>
+<td>8093</td>
+<td>Sesiones de clase, asistencia, anotaciones</td>
+</tr>
+<tr>
+<td>Frontend React</td>
+<td><code>frontend-react/</code></td>
+<td>8094</td>
+<td>UI por rol (admin, docente, apoderado, estudiante)</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>4. Flujo de integración Frontend ↔ Backend ↔ Persistencia</h2>
+<pre><code>┌─────────────────┐
+│  frontend-react │  React 19 + TypeScript + Vite
+│    :8094        │  VITE_API_URL → http://localhost:8090
+└────────┬────────┘
+         │  HTTP/JSON + Authorization: Bearer {JWT}
+         ▼
+┌─────────────────┐
+│   apiGetaway    │  Spring Cloud Gateway 2025.1.2
+│    :8090        │
+└────────┬────────┘
+         │
+    ┌────┴────┬────────────┬──────────────┐
+    ▼         ▼            ▼              ▼
+/auth/**  /students/**  /sessions/**   /admin/**
+    │     /courses/**   /attendances/**
+    │     /grades/**    /annotations/**
+    ▼         ▼            ▼
+┌────────┐ ┌──────────┐ ┌──────────────┐
+│  auth  │ │ academic │ │  attendance  │
+│ :8091  │ │  :8092   │ │    :8093     │
+└───┬────┘ └────┬─────┘ └──────┬───────┘
+    ▼           ▼              ▼
+ PostgreSQL   PostgreSQL      PostgreSQL
+ librodigital librodigital    librodigital
+    _auth       _academic       _attendance
+</code></pre>
+<h3>Rutas del Gateway (extracto)</h3>
+<table>
+<thead>
+<tr>
+<th>Prefijo</th>
+<th>Destino</th>
+<th>Servicio</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/auth/**</code></td>
+<td><code>http://localhost:8091</code></td>
+<td>authService</td>
+</tr>
+<tr>
+<td><code>/admin/**</code></td>
+<td><code>http://localhost:8091</code></td>
+<td>authService</td>
+</tr>
+<tr>
+<td><code>/students/**</code>, <code>/courses/**</code>, <code>/teachers/**</code>, <code>/subjects/**</code></td>
+<td><code>http://localhost:8092</code></td>
+<td>academicService</td>
+</tr>
+<tr>
+<td><code>/enrollments/**</code>, <code>/evaluations/**</code>, <code>/grades/**</code>, <code>/guardians/**</code></td>
+<td><code>http://localhost:8092</code></td>
+<td>academicService</td>
+</tr>
+<tr>
+<td><code>/sessions/**</code>, <code>/attendances/**</code>, <code>/annotations/**</code></td>
+<td><code>http://localhost:8093</code></td>
+<td>attendanceService</td>
+</tr>
+</tbody></table>
+<p>El frontend <strong>no</strong> invoca directamente los puertos 8091–8093 en desarrollo; siempre usa el gateway en <strong>8090</strong>, lo que desacopla la UI de la topología interna.</p>
+<hr>
+<h2>5. API REST</h2>
+<p>La especificación de endpoints está documentada en:</p>
+<ul>
+<li><strong>Colección Postman:</strong> <code>infraestructura/postman/Libro_Digital.postman_collection.json</code></li>
+<li><strong>Guía de uso:</strong> <code>infraestructura/postman/README.md</code></li>
+</ul>
+<p>Flujo típico de prueba:</p>
+<ol>
+<li><code>POST /auth/login</code> → obtiene <code>accessToken</code></li>
+<li>Peticiones subsiguientes con header <code>Authorization: Bearer {token}</code></li>
+<li>Operaciones CRUD en dominios academic y attendance según rol del usuario</li>
+</ol>
+<hr>
+<h2>6. Seguridad transversal</h2>
+<p><img src="diagramas/security_authentication.png" alt="Flujo de autenticación JWT"></p>
+<ol>
+<li>El usuario envía credenciales a <code>POST /auth/login</code>.</li>
+<li><code>authService</code> valida con <strong>BCrypt</strong> y emite <strong>JWT</strong> (<code>accessToken</code> + <code>refreshToken</code>).</li>
+<li>Cada microservicio valida el token en rutas protegidas mediante filtro JWT.</li>
+<li><strong>RBAC</strong> con 4 roles: <code>ADMIN</code>, <code>DOCENTE</code>, <code>APODERADO</code>, <code>ESTUDIANTE</code>.</li>
+<li>Registro público deshabilitado; provisión de usuarios vía <code>POST /admin/users</code> (solo ADMIN).</li>
+</ol>
+<p>Usuarios demo: <code>admin_colegio</code>, <code>prof_castillo</code>, <code>apoderado_demo</code>, <code>estudiante_demo</code> — contraseña <code>test1234</code>.</p>
+<hr>
+<h2>7. Stack tecnológico</h2>
+<table>
+<thead>
+<tr>
+<th>Capa</th>
+<th>Tecnologías</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Backend</td>
+<td>Java 21, Spring Boot 4.1.0, Spring Security, Spring Data JPA, Maven</td>
+</tr>
+<tr>
+<td>Gateway</td>
+<td>Spring Cloud Gateway 2025.1.2</td>
+</tr>
+<tr>
+<td>Frontend</td>
+<td>React 19, TypeScript, Vite 8, Tailwind CSS, React Router</td>
+</tr>
+<tr>
+<td>Base de datos</td>
+<td>PostgreSQL 16+ (una instancia, tres bases lógicas)</td>
+</tr>
+<tr>
+<td>Testing backend</td>
+<td>JUnit 5, Mockito, Spring Boot Test, JaCoCo 0.8.12</td>
+</tr>
+<tr>
+<td>API testing</td>
+<td>Postman Collection</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>8. Patrones de diseño implementados</h2>
+<table>
+<thead>
+<tr>
+<th>Patrón</th>
+<th>Aplicación en el proyecto</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>API Gateway</strong></td>
+<td><code>apiGetaway</code> centraliza rutas y simplifica el cliente</td>
+</tr>
+<tr>
+<td><strong>Database per Service</strong></td>
+<td>Tres bases PostgreSQL independientes</td>
+</tr>
+<tr>
+<td><strong>Repository</strong></td>
+<td>Interfaces <code>JpaRepository</code> por entidad</td>
+</tr>
+<tr>
+<td><strong>DTO</strong></td>
+<td>Objetos de transferencia separados de entidades JPA</td>
+</tr>
+<tr>
+<td><strong>Service Layer</strong></td>
+<td>Lógica de negocio en <code>*ServiceImpl</code>, controllers delgados</td>
+</tr>
+<tr>
+<td><strong>MVC</strong></td>
+<td>Controllers REST + modelos JPA + vistas React</td>
+</tr>
+</tbody></table>
+<p>Detalle ampliado: <code>infraestructura/docs/patrones.md</code></p>
+<hr>
+<h2>9. Orden de arranque recomendado</h2>
+<ol>
+<li>PostgreSQL (bases creadas con <code>infraestructura/ddl/00_create_databases.sql</code>)</li>
+<li><code>authService</code> → puerto 8091</li>
+<li><code>academicService</code> → puerto 8092</li>
+<li><code>attendanceService</code> → puerto 8093</li>
+<li><code>apiGetaway</code> → puerto 8090</li>
+<li><code>frontend-react</code> → puerto 8094 (<code>npm run dev</code>)</li>
+</ol>
+<hr>
+<h2>10. Diagramas complementarios</h2>
+<table>
+<thead>
+<tr>
+<th>Diagrama</th>
+<th>Ubicación</th>
+<th>Contenido</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ER Auth</td>
+<td><code>infraestructura/diagrams/auth_er_model.png</code></td>
+<td>Tablas <code>users</code>, <code>role</code>, <code>user_roles</code></td>
+</tr>
+<tr>
+<td>ER Academic</td>
+<td><code>infraestructura/diagrams/academic_er_model.png</code></td>
+<td>Catálogos + entidades académicas (3FN)</td>
+</tr>
+<tr>
+<td>ER Attendance</td>
+<td><code>infraestructura/diagrams/attendance_er_model.png</code></td>
+<td>Sesiones, asistencia, anotaciones</td>
+</tr>
+<tr>
+<td>Autorización RBAC</td>
+<td><code>infraestructura/diagrams/security_authorization.png</code></td>
+<td>Control de acceso por rol</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>11. Conclusión</h2>
+<p>La arquitectura propuesta cumple los requisitos de la evaluación: <strong>microservicios desacoplados</strong>, <strong>integración frontend-backend vía API REST</strong>, <strong>persistencia independiente por servicio</strong> y <strong>punto de entrada único</strong> (gateway) que facilita el despliegue y las pruebas de integración con Postman.</p>
+</body>
+</html>

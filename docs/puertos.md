@@ -58,6 +58,6 @@ Scripts: `infraestructura/ddl/` — ver `ddl/README.md` y `docs/bases_de_datos.m
 1. PostgreSQL
 2. authService (8091)
 3. academicService (8092)
-4. attendanceService (8093) — cuando esté implementado
+4. attendanceService (8093)
 5. apiGetaway (8090)
 6. frontend-react (8094)

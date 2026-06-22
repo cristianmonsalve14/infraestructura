@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JwtUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.academicService.util</a> &gt; <span class="el_source">JwtUtil.java</span></div><h1>JwtUtil.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.academicService.util;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import javax.crypto.SecretKey;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+@Component
+public class JwtUtil {
+
+    private final SecretKey secretKey;
+
+<span class="fc" id="L19">    public JwtUtil(@Value(&quot;${jwt.secret}&quot;) String secret) {</span>
+<span class="fc" id="L20">        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes());</span>
+<span class="fc" id="L21">    }</span>
+
+    public String extractUsername(String token) {
+<span class="fc" id="L24">        return extractAllClaims(token).getSubject();</span>
+    }
+
+    public String extractEmail(String token) {
+<span class="fc" id="L28">        Claims claims = extractAllClaims(token);</span>
+<span class="fc" id="L29">        Object email = claims.get(&quot;email&quot;);</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        return email != null ? email.toString().trim() : null;</span>
+    }
+
+    public Long extractUserId(String token) {
+<span class="fc" id="L34">        Claims claims = extractAllClaims(token);</span>
+<span class="fc" id="L35">        Object userId = claims.get(&quot;userId&quot;);</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        if (userId instanceof Number number) {</span>
+<span class="fc" id="L37">            return number.longValue();</span>
+        }
+<span class="pc bpc" id="L39" title="1 of 4 branches missed.">        if (userId instanceof String str &amp;&amp; !str.isBlank()) {</span>
+<span class="fc" id="L40">            return Long.parseLong(str);</span>
+        }
+<span class="fc" id="L42">        return null;</span>
+    }
+
+    public List&lt;String&gt; extractRoles(String token) {
+<span class="fc" id="L46">        Claims claims = extractAllClaims(token);</span>
+<span class="fc" id="L47">        String roles = claims.get(&quot;roles&quot;, String.class);</span>
+<span class="pc bpc" id="L48" title="1 of 4 branches missed.">        if (roles == null || roles.isBlank()) {</span>
+<span class="fc" id="L49">            return Collections.emptyList();</span>
+        }
+<span class="fc" id="L51">        return Arrays.stream(roles.split(&quot;,&quot;))</span>
+<span class="fc" id="L52">                .map(String::trim)</span>
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">                .filter(role -&gt; !role.isEmpty())</span>
+<span class="fc" id="L54">                .toList();</span>
+    }
+
+    public Claims extractAllClaims(String token) {
+<span class="fc" id="L58">        return Jwts.parserBuilder()</span>
+<span class="fc" id="L59">                .setSigningKey(secretKey)</span>
+<span class="fc" id="L60">                .build()</span>
+<span class="fc" id="L61">                .parseClaimsJws(token)</span>
+<span class="fc" id="L62">                .getBody();</span>
+    }
+
+    public boolean validateToken(String token) {
+        try {
+<span class="fc" id="L67">            extractAllClaims(token);</span>
+<span class="fc" id="L68">            return true;</span>
+<span class="fc" id="L69">        } catch (Exception e) {</span>
+<span class="fc" id="L70">            return false;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

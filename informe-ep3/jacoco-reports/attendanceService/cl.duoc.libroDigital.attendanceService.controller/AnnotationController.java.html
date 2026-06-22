@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnnotationController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">attendanceService</a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.attendanceService.controller</a> &gt; <span class="el_source">AnnotationController.java</span></div><h1>AnnotationController.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.attendanceService.controller;
+
+import cl.duoc.libroDigital.attendanceService.dto.AnnotationDTO;
+import cl.duoc.libroDigital.attendanceService.exception.ForbiddenException;
+import cl.duoc.libroDigital.attendanceService.model.Annotation;
+import cl.duoc.libroDigital.attendanceService.security.AttendanceAccessService;
+import cl.duoc.libroDigital.attendanceService.service.AnnotationService;
+import cl.duoc.libroDigital.attendanceService.service.AttendanceCatalogService;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping(&quot;/annotations&quot;)
+public class AnnotationController {
+
+    private final AnnotationService annotationService;
+    private final AttendanceAccessService access;
+    private final AttendanceCatalogService catalogs;
+
+<span class="fc" id="L22">    public AnnotationController(</span>
+            AnnotationService annotationService,
+            AttendanceAccessService access,
+            AttendanceCatalogService catalogs) {
+<span class="fc" id="L26">        this.annotationService = annotationService;</span>
+<span class="fc" id="L27">        this.access = access;</span>
+<span class="fc" id="L28">        this.catalogs = catalogs;</span>
+<span class="fc" id="L29">    }</span>
+
+    private AnnotationDTO toDTO(Annotation annotation) {
+<span class="fc" id="L32">        AnnotationDTO dto = new AnnotationDTO();</span>
+<span class="fc" id="L33">        dto.setId(annotation.getId());</span>
+<span class="fc" id="L34">        dto.setStudentId(annotation.getStudentId());</span>
+<span class="fc" id="L35">        access.resolveStudentName(annotation.getStudentId()).ifPresent(dto::setStudentName);</span>
+<span class="fc" id="L36">        dto.setTeacherId(annotation.getTeacherId());</span>
+<span class="fc" id="L37">        dto.setAnnotationDate(annotation.getAnnotationDate());</span>
+<span class="fc" id="L38">        dto.setType(catalogs.annotationTypeCode(annotation.getAnnotationTypeId()));</span>
+<span class="fc" id="L39">        dto.setDescription(annotation.getDescription());</span>
+<span class="fc" id="L40">        dto.setCreatedAt(annotation.getCreatedAt());</span>
+<span class="fc" id="L41">        dto.setUpdatedAt(annotation.getUpdatedAt());</span>
+<span class="fc" id="L42">        return dto;</span>
+    }
+
+    private Annotation toEntity(AnnotationDTO dto) {
+<span class="fc" id="L46">        Annotation annotation = new Annotation();</span>
+<span class="fc" id="L47">        annotation.setId(dto.getId());</span>
+<span class="fc" id="L48">        annotation.setStudentId(dto.getStudentId());</span>
+<span class="fc" id="L49">        annotation.setTeacherId(dto.getTeacherId());</span>
+<span class="fc" id="L50">        annotation.setAnnotationDate(dto.getAnnotationDate());</span>
+<span class="fc" id="L51">        annotation.setAnnotationTypeId(catalogs.annotationTypeId(dto.getType()));</span>
+<span class="fc" id="L52">        annotation.setDescription(dto.getDescription());</span>
+<span class="fc" id="L53">        return annotation;</span>
+    }
+
+    @PostMapping
+    public AnnotationDTO createAnnotation(@RequestBody AnnotationDTO dto) {
+<span class="fc" id="L58">        Annotation entity = toEntity(dto);</span>
+<span class="pc bpc" id="L59" title="2 of 4 branches missed.">        if (access.isTeacher() &amp;&amp; !access.isAdmin()) {</span>
+<span class="fc" id="L60">            entity.setTeacherId(access.requireTeacherId());</span>
+        }
+<span class="fc" id="L62">        return toDTO(annotationService.createAnnotation(entity));</span>
+    }
+
+    @GetMapping
+    public List&lt;AnnotationDTO&gt; getAllAnnotations() {
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">        if (access.isAdmin()) {</span>
+<span class="fc" id="L68">            return annotationService.getAllAnnotations()</span>
+<span class="fc" id="L69">                    .stream()</span>
+<span class="fc" id="L70">                    .map(this::toDTO)</span>
+<span class="fc" id="L71">                    .collect(Collectors.toList());</span>
+        }
+<span class="nc" id="L73">        Long teacherId = access.requireTeacherId();</span>
+<span class="nc" id="L74">        return annotationService.getAnnotationsByTeacher(teacherId)</span>
+<span class="nc" id="L75">                .stream()</span>
+<span class="nc" id="L76">                .map(this::toDTO)</span>
+<span class="nc" id="L77">                .collect(Collectors.toList());</span>
+    }
+
+    @GetMapping(&quot;/{id}&quot;)
+    public AnnotationDTO getAnnotation(@PathVariable Long id) {
+<span class="nc" id="L82">        access.ensureCanManageAnnotation(id);</span>
+<span class="nc" id="L83">        return annotationService.getAnnotationById(id)</span>
+<span class="nc" id="L84">                .map(this::toDTO)</span>
+<span class="nc" id="L85">                .orElse(null);</span>
+    }
+
+    @GetMapping(&quot;/student/{studentId}&quot;)
+    public List&lt;AnnotationDTO&gt; getAnnotationsByStudent(@PathVariable Long studentId) {
+<span class="nc" id="L90">        access.ensureCanReadStudent(studentId);</span>
+<span class="nc" id="L91">        return annotationService.getAnnotationsByStudent(studentId)</span>
+<span class="nc" id="L92">                .stream()</span>
+<span class="nc" id="L93">                .map(this::toDTO)</span>
+<span class="nc" id="L94">                .collect(Collectors.toList());</span>
+    }
+
+    @GetMapping(&quot;/teacher/{teacherId}&quot;)
+    public List&lt;AnnotationDTO&gt; getAnnotationsByTeacher(@PathVariable Long teacherId) {
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">        if (!access.isAdmin()) {</span>
+<span class="fc" id="L100">            Long currentTeacherId = access.requireTeacherId();</span>
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">            if (!currentTeacherId.equals(teacherId)) {</span>
+<span class="fc" id="L102">                throw new ForbiddenException(&quot;No puede consultar anotaciones de otro docente&quot;);</span>
+            }
+        }
+<span class="nc" id="L105">        return annotationService.getAnnotationsByTeacher(teacherId)</span>
+<span class="nc" id="L106">                .stream()</span>
+<span class="nc" id="L107">                .map(this::toDTO)</span>
+<span class="nc" id="L108">                .collect(Collectors.toList());</span>
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    public AnnotationDTO updateAnnotation(@PathVariable Long id, @RequestBody AnnotationDTO dto) {
+<span class="nc" id="L113">        access.ensureCanManageAnnotation(id);</span>
+<span class="nc" id="L114">        Annotation entity = toEntity(dto);</span>
+<span class="nc bnc" id="L115" title="All 4 branches missed.">        if (access.isTeacher() &amp;&amp; !access.isAdmin()) {</span>
+<span class="nc" id="L116">            entity.setTeacherId(access.requireTeacherId());</span>
+        }
+<span class="nc" id="L118">        return toDTO(annotationService.updateAnnotation(id, entity));</span>
+    }
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    public void deleteAnnotation(@PathVariable Long id) {
+<span class="nc" id="L123">        access.ensureCanManageAnnotation(id);</span>
+<span class="nc" id="L124">        annotationService.deleteAnnotation(id);</span>
+<span class="nc" id="L125">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -7,15 +7,15 @@ Levantar los 4 servicios backend (en terminales separadas):
 ```bash
 cd authService && mvn spring-boot:run        # :8091
 cd academicService && mvn spring-boot:run    # :8092
-cd attendanceService && mvn spring-boot:run   # :8093
-cd apiGetaway && mvn spring-boot:run          # :8090
+cd attendanceService && mvn spring-boot:run  # :8093
+cd apiGetaway && mvn spring-boot:run         # :8090
 ```
 
 ## Importar colección
 
 1. Abre Postman → **Import**
 2. Selecciona `Libro_Digital.postman_collection.json`
-3. La variable `baseUrl` ya apunta a `http://localhost:8090`
+3. La variable `baseUrl` apunta a `http://localhost:8090`
 
 ## Flujo de prueba
 
@@ -25,14 +25,14 @@ Request: **Auth → Login**
 
 ```json
 {
-  "username": "postman_test",
+  "username": "admin_colegio",
   "password": "test1234"
 }
 ```
 
 El script de tests guarda automáticamente `accessToken` en la variable `{{token}}`.
 
-Si no tienes usuario, usa **Auth → Register** primero.
+> `POST /auth/register` está **deshabilitado**. Usa los usuarios demo de `docs/bases_de_datos.md`.
 
 ### Paso 2 — Probar attendance
 
@@ -55,6 +55,15 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 ```
 
+## Usuarios demo
+
+| Usuario | Contraseña | Rol |
+|---|---|---|
+| `admin_colegio` | `test1234` | ADMINISTRADOR |
+| `prof_castillo` | `test1234` | DOCENTE |
+| `apoderado_demo` | `test1234` | APODERADO |
+| `estudiante_demo` | `test1234` | ESTUDIANTE |
+
 ## IDs de referencia (academic actual)
 
 | Entidad | ID |
@@ -64,15 +73,12 @@ Content-Type: application/json
 | Docente Manuel | 1 |
 | Estudiante Juan | 2 |
 
-## Resultados verificados (2026-06-07)
+> Los IDs pueden variar según tu BD. Ajusta los bodies de POST si es necesario.
 
-| Endpoint | Método | Resultado |
-|---|---|---|
-| `/auth/register` | POST | ✅ 200 + token |
-| `/auth/login` | POST | ✅ 200 + token |
-| `/sessions` | GET | ✅ 200 (1 sesión) |
-| `/attendances` | GET | ✅ 200 (1 asistencia) |
-| `/annotations` | GET | ✅ 200 (1 anotación) |
-| `/sessions` | POST | ✅ 201 — sesión id 2 |
-| `/attendances` | POST | ✅ 201 — asistencia AUSENTE |
-| `/students` | GET | ✅ 200 (vía gateway) |
+## Endpoints incluidos
+
+| Grupo | Rutas |
+|---|---|
+| Auth | `POST /auth/login` |
+| Academic | `GET /students`, `/courses`, `/teachers` |
+| Attendance | `GET/POST /sessions`, `/attendances`, `/annotations` |

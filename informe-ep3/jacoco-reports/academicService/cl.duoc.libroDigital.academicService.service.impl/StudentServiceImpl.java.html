@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StudentServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.academicService.service.impl</a> &gt; <span class="el_source">StudentServiceImpl.java</span></div><h1>StudentServiceImpl.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.academicService.service.impl;
+
+
+
+import cl.duoc.libroDigital.academicService.exception.NotFoundException;
+
+import cl.duoc.libroDigital.academicService.model.Student;
+
+import cl.duoc.libroDigital.academicService.repository.StudentRepository;
+
+import cl.duoc.libroDigital.academicService.service.CatalogLookupService;
+
+import cl.duoc.libroDigital.academicService.service.StudentService;
+
+import cl.duoc.libroDigital.academicService.validation.AcademicEntityValidator;
+
+import org.springframework.stereotype.Service;
+
+
+
+import java.util.List;
+
+import java.util.Optional;
+
+
+
+@Service
+
+public class StudentServiceImpl implements StudentService {
+
+    private final StudentRepository studentRepository;
+    private final CatalogLookupService catalogs;
+    private final AcademicEntityValidator validator;
+
+<span class="fc" id="L35">    public StudentServiceImpl(</span>
+            StudentRepository studentRepository,
+            CatalogLookupService catalogs,
+            AcademicEntityValidator validator) {
+<span class="fc" id="L39">        this.studentRepository = studentRepository;</span>
+<span class="fc" id="L40">        this.catalogs = catalogs;</span>
+<span class="fc" id="L41">        this.validator = validator;</span>
+<span class="fc" id="L42">    }</span>
+
+    @Override
+
+    public Student createStudent(Student student) {
+
+<span class="fc" id="L48">        student.setEnrollmentNumber(null);</span>
+
+<span class="fc" id="L50">        validator.validateStudentForSave(student, null);</span>
+
+<span class="fc" id="L52">        return studentRepository.save(student);</span>
+
+    }
+
+
+
+    @Override
+
+    public List&lt;Student&gt; getAllStudents() {
+
+<span class="nc" id="L62">        return studentRepository.findAll();</span>
+
+    }
+
+
+
+    @Override
+
+    public Optional&lt;Student&gt; getStudentById(Long id) {
+
+<span class="fc" id="L72">        return studentRepository.findById(id);</span>
+
+    }
+
+
+
+    @Override
+
+    public Student updateStudent(Long id, Student student) {
+
+<span class="fc" id="L82">        return studentRepository.findById(id).map(existingStudent -&gt; {</span>
+
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">            if (student.getRut() != null) existingStudent.setRut(student.getRut());</span>
+
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">            if (student.getFirstName() != null) existingStudent.setFirstName(student.getFirstName());</span>
+
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">            if (student.getSecondName() != null) existingStudent.setSecondName(student.getSecondName());</span>
+
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">            if (student.getLastName() != null) existingStudent.setLastName(student.getLastName());</span>
+
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">            if (student.getMotherLastName() != null) existingStudent.setMotherLastName(student.getMotherLastName());</span>
+
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">            if (student.getDateOfBirth() != null) existingStudent.setDateOfBirth(student.getDateOfBirth());</span>
+
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">            if (student.getPhone() != null) existingStudent.setPhone(student.getPhone());</span>
+
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">            if (student.getEmail() != null) existingStudent.setEmail(student.getEmail());</span>
+
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">            if (student.getAddress() != null) existingStudent.setAddress(student.getAddress());</span>
+
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">            if (student.getCommune() != null) existingStudent.setCommune(student.getCommune());</span>
+
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">            if (student.getCity() != null) existingStudent.setCity(student.getCity());</span>
+
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">            if (student.getStudentStatusId() != null) existingStudent.setStudentStatusId(student.getStudentStatusId());</span>
+
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">            if (student.getAdmissionDate() != null) existingStudent.setAdmissionDate(student.getAdmissionDate());</span>
+
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">            if (student.getWithdrawalDate() != null) existingStudent.setWithdrawalDate(student.getWithdrawalDate());</span>
+
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">            if (student.getGuardianId() != null) existingStudent.setGuardianId(student.getGuardianId());</span>
+
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">            if (student.getUserId() != null) existingStudent.setUserId(student.getUserId());</span>
+
+
+
+<span class="fc" id="L118">            validator.validateStudentForSave(existingStudent, id);</span>
+
+<span class="fc" id="L120">            return studentRepository.save(existingStudent);</span>
+
+<span class="fc" id="L122">        }).orElseThrow(() -&gt; new NotFoundException(&quot;Estudiante no encontrado con id &quot; + id));</span>
+
+    }
+
+
+
+    @Override
+
+    public void deleteStudent(Long id) {
+
+<span class="fc" id="L132">        studentRepository.deleteById(id);</span>
+
+<span class="fc" id="L134">    }</span>
+
+
+
+    @Override
+
+    public Optional&lt;Student&gt; getStudentByRut(String rut) {
+
+<span class="nc" id="L142">        return studentRepository.findByRut(rut);</span>
+
+    }
+
+
+
+    @Override
+
+    public Optional&lt;Student&gt; getStudentByEmail(String email) {
+
+<span class="nc" id="L152">        return studentRepository.findByEmail(email);</span>
+
+    }
+
+
+
+    @Override
+
+    public List&lt;Student&gt; getStudentsByStatus(String studentStatus) {
+
+<span class="fc" id="L162">        return studentRepository.findByStudentStatusId(catalogs.requireId(&quot;student_statuses&quot;, studentStatus));</span>
+
+    }
+
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

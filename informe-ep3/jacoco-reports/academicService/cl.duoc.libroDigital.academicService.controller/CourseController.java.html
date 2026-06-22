@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CourseController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.academicService.controller</a> &gt; <span class="el_source">CourseController.java</span></div><h1>CourseController.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.academicService.controller;
+
+import cl.duoc.libroDigital.academicService.model.Course;
+import cl.duoc.libroDigital.academicService.service.CatalogLookupService;
+import cl.duoc.libroDigital.academicService.service.CourseService;
+import cl.duoc.libroDigital.academicService.dto.CourseDTO;
+import cl.duoc.libroDigital.academicService.security.AcademicAccessService;
+
+import java.time.format.DateTimeFormatter;
+import java.time.LocalDate;
+
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping(&quot;/courses&quot;)
+public class CourseController {
+
+    private final CourseService courseService;
+    private final CatalogLookupService catalogs;
+    private final AcademicAccessService access;
+
+<span class="fc" id="L26">    public CourseController(</span>
+            CourseService courseService,
+            CatalogLookupService catalogs,
+            AcademicAccessService access) {
+<span class="fc" id="L30">        this.courseService = courseService;</span>
+<span class="fc" id="L31">        this.catalogs = catalogs;</span>
+<span class="fc" id="L32">        this.access = access;</span>
+<span class="fc" id="L33">    }</span>
+
+<span class="fc" id="L35">    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern(&quot;yyyy-MM-dd&quot;);</span>
+<span class="fc" id="L36">    private static final DateTimeFormatter DATETIME_FORMAT = DateTimeFormatter.ofPattern(&quot;yyyy-MM-dd'T'HH:mm:ss&quot;);</span>
+
+    private CourseDTO toDTO(Course course) {
+<span class="fc" id="L39">        CourseDTO dto = new CourseDTO();</span>
+<span class="fc" id="L40">        dto.setId(course.getId());</span>
+<span class="fc" id="L41">        dto.setName(course.getName());</span>
+<span class="fc" id="L42">        dto.setGrade(catalogs.label(&quot;education_levels&quot;, course.getLevelId()));</span>
+<span class="fc" id="L43">        LocalDate start = catalogs.academicYearStartDate(course.getAcademicYearId());</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">        dto.setAcademicYear(start != null ? start.format(DATE_FORMAT) : null);</span>
+<span class="fc" id="L45">        dto.setShift(catalogs.code(&quot;shifts&quot;, course.getShiftId()));</span>
+<span class="fc" id="L46">        dto.setHeadTeacherId(course.getHeadTeacherId());</span>
+<span class="fc" id="L47">        dto.setMaxCapacity(course.getMaxCapacity());</span>
+<span class="fc" id="L48">        dto.setClassroom(course.getClassroom());</span>
+<span class="fc" id="L49">        dto.setLevel(catalogs.educationStage(course.getLevelId()));</span>
+<span class="fc" id="L50">        dto.setCourseStatus(catalogs.code(&quot;course_statuses&quot;, course.getCourseStatusId()));</span>
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">        dto.setCreatedAt(course.getCreatedAt() != null ? course.getCreatedAt().format(DATETIME_FORMAT) : null);</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        dto.setUpdatedAt(course.getUpdatedAt() != null ? course.getUpdatedAt().format(DATETIME_FORMAT) : null);</span>
+<span class="fc" id="L53">        return dto;</span>
+    }
+
+    private Course toEntity(CourseDTO dto) {
+<span class="fc" id="L57">        Course course = new Course();</span>
+<span class="fc" id="L58">        course.setId(dto.getId());</span>
+<span class="fc" id="L59">        course.setName(dto.getName());</span>
+<span class="fc" id="L60">        course.setLevelId(catalogs.educationLevelIdFromLabel(dto.getGrade()));</span>
+<span class="pc bpc" id="L61" title="2 of 4 branches missed.">        if (dto.getAcademicYear() != null &amp;&amp; !dto.getAcademicYear().isBlank()) {</span>
+<span class="fc" id="L62">            course.setAcademicYearId(catalogs.academicYearIdFromDate(LocalDate.parse(dto.getAcademicYear(), DATE_FORMAT)));</span>
+        }
+<span class="pc bpc" id="L64" title="2 of 4 branches missed.">        if (dto.getShift() != null &amp;&amp; !dto.getShift().isBlank()) {</span>
+<span class="fc" id="L65">            course.setShiftId(catalogs.requireId(&quot;shifts&quot;, dto.getShift()));</span>
+        }
+<span class="fc" id="L67">        course.setHeadTeacherId(dto.getHeadTeacherId());</span>
+<span class="fc" id="L68">        course.setMaxCapacity(dto.getMaxCapacity());</span>
+<span class="fc" id="L69">        course.setClassroom(dto.getClassroom());</span>
+<span class="fc" id="L70">        course.setCourseStatusId(catalogs.requireId(&quot;course_statuses&quot;, dto.getCourseStatus()));</span>
+<span class="fc" id="L71">        return course;</span>
+    }
+
+    @PostMapping
+    public CourseDTO createCourse(@RequestBody CourseDTO dto) {
+<span class="fc" id="L76">        access.requireAdmin();</span>
+<span class="fc" id="L77">        Course created = courseService.createCourse(toEntity(dto));</span>
+<span class="fc" id="L78">        return toDTO(created);</span>
+    }
+
+    @GetMapping
+    public List&lt;CourseDTO&gt; getAllCourses() {
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        if (access.isAdmin()) {</span>
+<span class="nc" id="L84">            return courseService.getAllCourses().stream().map(this::toDTO).collect(Collectors.toList());</span>
+        }
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">        if (access.isStudent()) {</span>
+<span class="nc" id="L87">            Long studentId = access.requireStudentId();</span>
+<span class="nc" id="L88">            Set&lt;Long&gt; allowed = access.studentCourseIds(studentId);</span>
+<span class="nc" id="L89">            return courseService.getAllCourses().stream()</span>
+<span class="nc" id="L90">                    .filter(course -&gt; allowed.contains(course.getId()))</span>
+<span class="nc" id="L91">                    .map(this::toDTO)</span>
+<span class="nc" id="L92">                    .collect(Collectors.toList());</span>
+        }
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        if (access.isGuardian()) {</span>
+<span class="fc" id="L95">            Long guardianId = access.requireGuardianId();</span>
+<span class="fc" id="L96">            Set&lt;Long&gt; allowed = access.guardianCourseIds(guardianId);</span>
+<span class="fc" id="L97">            return courseService.getAllCourses().stream()</span>
+<span class="fc" id="L98">                    .filter(course -&gt; allowed.contains(course.getId()))</span>
+<span class="fc" id="L99">                    .map(this::toDTO)</span>
+<span class="fc" id="L100">                    .collect(Collectors.toList());</span>
+        }
+<span class="nc" id="L102">        Long teacherId = access.requireTeacherId();</span>
+<span class="nc" id="L103">        Set&lt;Long&gt; allowed = access.teacherCourseIds(teacherId);</span>
+<span class="nc" id="L104">        return courseService.getAllCourses().stream()</span>
+<span class="nc" id="L105">                .filter(course -&gt; allowed.contains(course.getId()))</span>
+<span class="nc" id="L106">                .map(this::toDTO)</span>
+<span class="nc" id="L107">                .collect(Collectors.toList());</span>
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    public CourseDTO updateCourse(@PathVariable Long id, @RequestBody CourseDTO dto) {
+<span class="nc" id="L112">        access.requireAdmin();</span>
+<span class="nc" id="L113">        Course updated = courseService.updateCourse(id, toEntity(dto));</span>
+<span class="nc" id="L114">        return toDTO(updated);</span>
+    }
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    public void deleteCourse(@PathVariable Long id) {
+<span class="nc" id="L119">        access.requireAdmin();</span>
+<span class="nc" id="L120">        courseService.deleteCourse(id);</span>
+<span class="nc" id="L121">    }</span>
+
+    @GetMapping(&quot;/{id}&quot;)
+    public CourseDTO getCourse(@PathVariable Long id) {
+<span class="fc" id="L125">        access.ensureCanReadCourse(id);</span>
+<span class="fc" id="L126">        return courseService.getCourseById(id).map(this::toDTO).orElse(null);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

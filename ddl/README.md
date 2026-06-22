@@ -10,69 +10,92 @@ Arquitectura **database per service**: cada microservicio tiene su propia base P
 | `librodigital_academic` | academicService | 8092 |
 | `librodigital_attendance` | attendanceService | 8093 |
 
-## Instalación desde cero
+## Instalación desde cero (recomendado)
 
-### 1. Crear las bases (una sola vez)
-
-Conéctate a PostgreSQL como `postgres` y ejecuta:
+### 1. Crear las bases
 
 ```sql
--- Archivo: 00_create_databases.sql
+-- 00_create_databases.sql
 CREATE DATABASE librodigital_auth;
 CREATE DATABASE librodigital_academic;
 CREATE DATABASE librodigital_attendance;
 ```
 
-### 2. Ejecutar esquema por servicio
+### 2. Ejecutar esquema normalizado por servicio
 
-En pgAdmin o psql, conéctate a **cada base** y ejecuta su script:
+| Base | Script | Estado |
+|---|---|---|
+| `librodigital_auth` | `auth_schema.sql` | Esquema final |
+| `librodigital_academic` | `academic_schema.sql` | Esquema final (3FN + catálogos) |
+| `librodigital_attendance` | `attendance_schema.sql` | Esquema final (3FN + catálogos) |
 
-| Base | Script |
-|---|---|
-| librodigital_auth | `auth_schema.sql` |
-| librodigital_academic | `academic_schema.sql` |
-| librodigital_attendance | `attendance_schema.sql` |
+Los scripts `*_schema.sql` ya incluyen tablas catálogo, claves foráneas y datos demo.
 
 ### 3. Alternativa con JPA (desarrollo)
-
-Si prefieres que Hibernate cree las tablas automáticamente:
 
 ```properties
 spring.jpa.hibernate.ddl-auto=update
 ```
 
-Los microservicios crearán/actualizarán tablas al iniciar. Los scripts SQL sirven como documentación y para entornos controlados.
+Hibernate crea/actualiza tablas desde las entidades JPA. Los scripts SQL documentan el modelo y sirven para instalaciones controladas.
 
-## Orden de ejecución de microservicios
+## Migraciones (solo BD existentes antiguas)
+
+Si tu base fue creada con una versión **anterior** de los schemas (VARCHAR categóricos), aplica en orden:
+
+### librodigital_academic
+
+```bash
+psql -U postgres -d librodigital_academic -f migrations/001_cleanup_academic.sql
+psql -U postgres -d librodigital_academic -f migrations/002_normalizacion_academic.sql
+psql -U postgres -d librodigital_academic -f migrations/003_shifts_completa.sql
+psql -U postgres -d librodigital_academic -f migrations/004_teachers_auth_link.sql
+```
+
+### librodigital_attendance
+
+```bash
+psql -U postgres -d librodigital_attendance -f migrations/002_normalizacion_attendance.sql
+```
+
+> Instalación nueva: **no** necesitas migraciones si ejecutas los `*_schema.sql` actuales.
+
+## Orden de arranque
 
 1. PostgreSQL
-2. authService
-3. academicService
-4. attendanceService
-5. apiGetaway
-6. frontend-react
+2. authService (8091)
+3. academicService (8092)
+4. attendanceService (8093)
+5. apiGetaway (8090)
+6. frontend-react (8094)
 
-## Usuario de prueba
+## Usuarios demo
 
-Los roles se crean al iniciar `authService`. Registra un admin:
+Creados al iniciar `authService` (`DemoUserInitializerConfig`):
 
-```http
-POST http://localhost:8090/auth/register
-Content-Type: application/json
+| Usuario | Contraseña | Rol |
+|---|---|---|
+| `admin_colegio` | `test1234` | ADMINISTRADOR |
+| `prof_castillo` | `test1234` | DOCENTE |
+| `apoderado_demo` | `test1234` | APODERADO |
+| `estudiante_demo` | `test1234` | ESTUDIANTE |
 
-{
-  "username": "admin",
-  "email": "admin@librodigital.cl",
-  "password": "admin123!"
-}
-```
+Registro público (`POST /auth/register`) deshabilitado. Nuevos usuarios vía panel admin o `POST /admin/users`.
+
+## Diagramas ER
+
+| Base | Archivo |
+|---|---|
+| Auth | `infraestructura/diagrams/auth_er_model.puml` |
+| Academic | `infraestructura/diagrams/academic_er_model.puml` |
+| Attendance | `infraestructura/diagrams/attendance_er_model.puml` |
+
+## Referencias cruzadas (sin FK entre bases)
+
+- `students.user_id`, `guardians.user_id`, `teachers.user_id` → `users.id` (authService)
+- `class_sessions.course_id`, `subject_id`, `teacher_id` → academicService
+- `attendance_records.student_id`, `annotations.student_id` → academicService
 
 ## Script legado
 
-`initial_schema.sql` corresponde al diseño monolítico anterior (una sola BD `libro_clases`). **No usar** en la arquitectura actual de microservicios.
-
-## Referencias cruzadas entre servicios
-
-- `students.user_id` → `users.id` en auth (solo ID, sin FK)
-- `class_sessions.course_id` → `courses.id` en academic (solo ID, sin FK)
-- `attendance_records.student_id` → `students.id` en academic (solo ID, sin FK)
+`archive/ddl/initial_schema.sql` — BD monolítica antigua. **No usar.**

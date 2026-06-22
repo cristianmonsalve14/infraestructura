@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TeacherServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.academicService.service.impl</a> &gt; <span class="el_source">TeacherServiceImpl.java</span></div><h1>TeacherServiceImpl.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.academicService.service.impl;
+
+
+
+import cl.duoc.libroDigital.academicService.exception.NotFoundException;
+
+import cl.duoc.libroDigital.academicService.model.Teacher;
+
+import cl.duoc.libroDigital.academicService.repository.TeacherRepository;
+
+import cl.duoc.libroDigital.academicService.service.CatalogLookupService;
+
+import cl.duoc.libroDigital.academicService.service.TeacherService;
+
+import cl.duoc.libroDigital.academicService.validation.AcademicEntityValidator;
+
+import org.springframework.stereotype.Service;
+
+
+
+import java.util.List;
+
+import java.util.Optional;
+
+
+
+@Service
+
+public class TeacherServiceImpl implements TeacherService {
+
+    private final TeacherRepository teacherRepository;
+    private final CatalogLookupService catalogs;
+    private final AcademicEntityValidator validator;
+
+<span class="fc" id="L35">    public TeacherServiceImpl(</span>
+            TeacherRepository teacherRepository,
+            CatalogLookupService catalogs,
+            AcademicEntityValidator validator) {
+<span class="fc" id="L39">        this.teacherRepository = teacherRepository;</span>
+<span class="fc" id="L40">        this.catalogs = catalogs;</span>
+<span class="fc" id="L41">        this.validator = validator;</span>
+<span class="fc" id="L42">    }</span>
+
+    @Override
+
+    public Teacher createTeacher(Teacher teacher) {
+
+<span class="fc" id="L48">        validator.validateTeacherForSave(teacher, null);</span>
+
+<span class="fc" id="L50">        return teacherRepository.save(teacher);</span>
+
+    }
+
+
+
+    @Override
+
+    public List&lt;Teacher&gt; getAllTeachers() {
+
+<span class="nc" id="L60">        return teacherRepository.findAll();</span>
+
+    }
+
+
+
+    @Override
+
+    public Optional&lt;Teacher&gt; getTeacherById(Long id) {
+
+<span class="fc" id="L70">        return teacherRepository.findById(id);</span>
+
+    }
+
+
+
+    @Override
+
+    public Teacher updateTeacher(Long id, Teacher teacher) {
+
+<span class="fc" id="L80">        return teacherRepository.findById(id).map(existing -&gt; {</span>
+
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">            if (teacher.getRut() != null) existing.setRut(teacher.getRut());</span>
+
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">            if (teacher.getFirstName() != null) existing.setFirstName(teacher.getFirstName());</span>
+
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">            if (teacher.getLastName() != null) existing.setLastName(teacher.getLastName());</span>
+
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">            if (teacher.getSecondLastName() != null) existing.setSecondLastName(teacher.getSecondLastName());</span>
+
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">            if (teacher.getEmail() != null) existing.setEmail(teacher.getEmail());</span>
+
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">            if (teacher.getPhone() != null) existing.setPhone(teacher.getPhone());</span>
+
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">            if (teacher.getAddress() != null) existing.setAddress(teacher.getAddress());</span>
+
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">            if (teacher.getCommune() != null) existing.setCommune(teacher.getCommune());</span>
+
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">            if (teacher.getCity() != null) existing.setCity(teacher.getCity());</span>
+
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">            if (teacher.getEmployeeNumber() != null) existing.setEmployeeNumber(teacher.getEmployeeNumber());</span>
+
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">            if (teacher.getSpecialization() != null) existing.setSpecialization(teacher.getSpecialization());</span>
+
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">            if (teacher.getEducationLevel() != null) existing.setEducationLevel(teacher.getEducationLevel());</span>
+
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">            if (teacher.getHireDate() != null) existing.setHireDate(teacher.getHireDate());</span>
+
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">            if (teacher.getContractTypeId() != null) existing.setContractTypeId(teacher.getContractTypeId());</span>
+
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">            if (teacher.getTeacherStatusId() != null) existing.setTeacherStatusId(teacher.getTeacherStatusId());</span>
+
+
+
+<span class="fc" id="L114">            validator.validateTeacherForSave(existing, id);</span>
+
+<span class="fc" id="L116">            return teacherRepository.save(existing);</span>
+
+<span class="fc" id="L118">        }).orElseThrow(() -&gt; new NotFoundException(&quot;Profesor no encontrado con id &quot; + id));</span>
+
+    }
+
+
+
+    @Override
+
+    public void deleteTeacher(Long id) {
+
+<span class="fc" id="L128">        teacherRepository.deleteById(id);</span>
+
+<span class="fc" id="L130">    }</span>
+
+
+
+    @Override
+
+    public Optional&lt;Teacher&gt; getTeacherByRut(String rut) {
+
+<span class="nc" id="L138">        return teacherRepository.findByRut(rut);</span>
+
+    }
+
+
+
+    @Override
+
+    public Optional&lt;Teacher&gt; getTeacherByEmail(String email) {
+
+<span class="nc" id="L148">        return teacherRepository.findByEmail(email);</span>
+
+    }
+
+
+
+    @Override
+
+    public List&lt;Teacher&gt; getTeachersByStatus(String teacherStatus) {
+
+<span class="fc" id="L158">        return teacherRepository.findByTeacherStatusId(catalogs.requireId(&quot;teacher_statuses&quot;, teacherStatus));</span>
+
+    }
+
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
