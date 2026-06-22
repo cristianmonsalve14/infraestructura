@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EnrollmentServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.academicService.service.impl</a> &gt; <span class="el_source">EnrollmentServiceImpl.java</span></div><h1>EnrollmentServiceImpl.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.academicService.service.impl;
+
+
+
+import cl.duoc.libroDigital.academicService.exception.NotFoundException;
+
+import cl.duoc.libroDigital.academicService.model.Enrollment;
+
+import cl.duoc.libroDigital.academicService.repository.EnrollmentRepository;
+
+import cl.duoc.libroDigital.academicService.service.CatalogLookupService;
+
+import cl.duoc.libroDigital.academicService.service.EnrollmentNumberService;
+
+import cl.duoc.libroDigital.academicService.service.EnrollmentService;
+
+import cl.duoc.libroDigital.academicService.validation.AcademicEntityValidator;
+
+import org.springframework.stereotype.Service;
+
+import org.springframework.transaction.annotation.Transactional;
+
+
+
+import java.util.List;
+
+import java.util.Optional;
+
+
+
+@Service
+
+public class EnrollmentServiceImpl implements EnrollmentService {
+
+    private final EnrollmentRepository enrollmentRepository;
+    private final CatalogLookupService catalogs;
+    private final EnrollmentNumberService enrollmentNumberService;
+    private final AcademicEntityValidator validator;
+
+<span class="fc" id="L40">    public EnrollmentServiceImpl(</span>
+            EnrollmentRepository enrollmentRepository,
+            CatalogLookupService catalogs,
+            EnrollmentNumberService enrollmentNumberService,
+            AcademicEntityValidator validator) {
+<span class="fc" id="L45">        this.enrollmentRepository = enrollmentRepository;</span>
+<span class="fc" id="L46">        this.catalogs = catalogs;</span>
+<span class="fc" id="L47">        this.enrollmentNumberService = enrollmentNumberService;</span>
+<span class="fc" id="L48">        this.validator = validator;</span>
+<span class="fc" id="L49">    }</span>
+
+    @Override
+
+    @Transactional
+
+    public Enrollment createEnrollment(Enrollment enrollment) {
+
+<span class="fc" id="L57">        validator.validateEnrollmentForSave(enrollment, null);</span>
+
+<span class="fc" id="L59">        Enrollment saved = enrollmentRepository.save(enrollment);</span>
+
+<span class="fc" id="L61">        enrollmentNumberService.assignIfNeeded(saved);</span>
+
+<span class="fc" id="L63">        return saved;</span>
+
+    }
+
+
+
+    @Override
+
+    public List&lt;Enrollment&gt; getAllEnrollments() {
+
+<span class="nc" id="L73">        return enrollmentRepository.findAll();</span>
+
+    }
+
+
+
+    @Override
+
+    public Optional&lt;Enrollment&gt; getEnrollmentById(Long id) {
+
+<span class="fc" id="L83">        return enrollmentRepository.findById(id);</span>
+
+    }
+
+
+
+    @Override
+
+    public Enrollment updateEnrollment(Long id, Enrollment enrollment) {
+
+<span class="pc" id="L93">        return enrollmentRepository.findById(id).map(existing -&gt; {</span>
+
+<span class="nc bnc" id="L95" title="All 2 branches missed.">            if (enrollment.getStudentId() != null) existing.setStudentId(enrollment.getStudentId());</span>
+
+<span class="nc bnc" id="L97" title="All 2 branches missed.">            if (enrollment.getCourseId() != null) existing.setCourseId(enrollment.getCourseId());</span>
+
+<span class="nc bnc" id="L99" title="All 2 branches missed.">            if (enrollment.getEnrollmentDate() != null) existing.setEnrollmentDate(enrollment.getEnrollmentDate());</span>
+
+<span class="nc bnc" id="L101" title="All 2 branches missed.">            if (enrollment.getAcademicYearId() != null) existing.setAcademicYearId(enrollment.getAcademicYearId());</span>
+
+<span class="nc bnc" id="L103" title="All 2 branches missed.">            if (enrollment.getEnrollmentStatusId() != null) existing.setEnrollmentStatusId(enrollment.getEnrollmentStatusId());</span>
+
+<span class="nc bnc" id="L105" title="All 2 branches missed.">            if (enrollment.getIsRegular() != null) existing.setIsRegular(enrollment.getIsRegular());</span>
+
+<span class="nc bnc" id="L107" title="All 2 branches missed.">            if (enrollment.getObservations() != null) existing.setObservations(enrollment.getObservations());</span>
+
+
+
+<span class="nc" id="L111">            validator.validateEnrollmentForSave(existing, id);</span>
+
+<span class="nc" id="L113">            return enrollmentRepository.save(existing);</span>
+
+<span class="pc" id="L115">        }).orElseThrow(() -&gt; new NotFoundException(&quot;Matrícula no encontrada con id &quot; + id));</span>
+
+    }
+
+
+
+    @Override
+
+    public void deleteEnrollment(Long id) {
+
+<span class="fc" id="L125">        enrollmentRepository.deleteById(id);</span>
+
+<span class="fc" id="L127">    }</span>
+
+
+
+    @Override
+
+    public List&lt;Enrollment&gt; getEnrollmentsByStudent(Long studentId) {
+
+<span class="nc" id="L135">        return enrollmentRepository.findByStudentId(studentId);</span>
+
+    }
+
+
+
+    @Override
+
+    public List&lt;Enrollment&gt; getEnrollmentsByCourse(Long courseId) {
+
+<span class="nc" id="L145">        return enrollmentRepository.findByCourseId(courseId);</span>
+
+    }
+
+
+
+    @Override
+
+    public List&lt;Enrollment&gt; getEnrollmentsByStatus(String enrollmentStatus) {
+
+<span class="nc" id="L155">        return enrollmentRepository.findByEnrollmentStatusId(catalogs.requireId(&quot;enrollment_statuses&quot;, enrollmentStatus));</span>
+
+    }
+
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

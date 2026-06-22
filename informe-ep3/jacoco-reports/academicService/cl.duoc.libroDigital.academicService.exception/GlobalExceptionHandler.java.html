@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GlobalExceptionHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.academicService.exception</a> &gt; <span class="el_source">GlobalExceptionHandler.java</span></div><h1>GlobalExceptionHandler.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.academicService.exception;
+
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.Map;
+
+@RestControllerAdvice
+<span class="fc" id="L12">public class GlobalExceptionHandler {</span>
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleForbidden(ForbiddenException ex) {
+<span class="fc" id="L16">        return ResponseEntity.status(HttpStatus.FORBIDDEN)</span>
+<span class="fc" id="L17">                .body(Map.of(&quot;message&quot;, ex.getMessage()));</span>
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleConflict(ConflictException ex) {
+<span class="fc" id="L22">        return ResponseEntity.status(HttpStatus.CONFLICT)</span>
+<span class="fc" id="L23">                .body(Map.of(&quot;message&quot;, ex.getMessage()));</span>
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleBadRequest(BadRequestException ex) {
+<span class="fc" id="L28">        return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="fc" id="L29">                .body(Map.of(&quot;message&quot;, ex.getMessage()));</span>
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleNotFound(NotFoundException ex) {
+<span class="fc" id="L34">        return ResponseEntity.status(HttpStatus.NOT_FOUND)</span>
+<span class="fc" id="L35">                .body(Map.of(&quot;message&quot;, ex.getMessage()));</span>
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleDataIntegrity(DataIntegrityViolationException ex) {
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        String detail = ex.getMostSpecificCause() != null</span>
+<span class="fc" id="L41">                ? ex.getMostSpecificCause().getMessage()</span>
+<span class="nc" id="L42">                : ex.getMessage();</span>
+<span class="fc" id="L43">        String message = &quot;No se puede eliminar el registro porque tiene datos relacionados&quot;;</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">        if (detail != null) {</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">            if (detail.contains(&quot;fk_evaluations_subject&quot;)) {</span>
+<span class="fc" id="L46">                message = &quot;No se puede eliminar la asignatura porque tiene evaluaciones asociadas. Elimine primero las evaluaciones de esta asignatura.&quot;;</span>
+<span class="pc bpc" id="L47" title="1 of 4 branches missed.">            } else if (detail.contains(&quot;fk_courses_head_teacher&quot;) || detail.contains(&quot;teachers&quot;)) {</span>
+<span class="fc" id="L48">                message = &quot;No se puede eliminar el profesor porque está asignado a cursos o asignaturas.&quot;;</span>
+<span class="pc bpc" id="L49" title="1 of 4 branches missed.">            } else if (detail.contains(&quot;fk_grades&quot;) || detail.contains(&quot;grades&quot;)) {</span>
+<span class="fc" id="L50">                message = &quot;No se puede eliminar porque existen notas asociadas.&quot;;</span>
+<span class="pc bpc" id="L51" title="1 of 4 branches missed.">            } else if (detail.contains(&quot;fk_enrollments&quot;) || detail.contains(&quot;enrollments&quot;)) {</span>
+<span class="fc" id="L52">                message = &quot;No se puede eliminar porque existen matrículas asociadas.&quot;;</span>
+            }
+        }
+<span class="fc" id="L55">        return ResponseEntity.status(HttpStatus.CONFLICT)</span>
+<span class="fc" id="L56">                .body(Map.of(&quot;message&quot;, message));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

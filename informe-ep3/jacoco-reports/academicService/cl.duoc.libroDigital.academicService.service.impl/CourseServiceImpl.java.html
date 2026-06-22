@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CourseServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.academicService.service.impl</a> &gt; <span class="el_source">CourseServiceImpl.java</span></div><h1>CourseServiceImpl.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.academicService.service.impl;
+
+import cl.duoc.libroDigital.academicService.exception.NotFoundException;
+import cl.duoc.libroDigital.academicService.model.Course;
+import cl.duoc.libroDigital.academicService.repository.CourseRepository;
+import cl.duoc.libroDigital.academicService.service.CourseService;
+import cl.duoc.libroDigital.academicService.validation.AcademicEntityValidator;
+
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class CourseServiceImpl implements CourseService {
+
+    private final CourseRepository courseRepository;
+    private final AcademicEntityValidator validator;
+
+<span class="fc" id="L20">    public CourseServiceImpl(CourseRepository courseRepository, AcademicEntityValidator validator) {</span>
+<span class="fc" id="L21">        this.courseRepository = courseRepository;</span>
+<span class="fc" id="L22">        this.validator = validator;</span>
+<span class="fc" id="L23">    }</span>
+
+    @Override
+    public Course createCourse(Course course) {
+<span class="fc" id="L27">        validator.validateCourseForSave(course);</span>
+<span class="fc" id="L28">        return courseRepository.save(course);</span>
+    }
+
+    @Override
+    public List&lt;Course&gt; getAllCourses() {
+<span class="nc" id="L33">        return courseRepository.findAll();</span>
+    }
+
+    @Override
+    public Optional&lt;Course&gt; getCourseById(Long id) {
+<span class="fc" id="L38">        return courseRepository.findById(id);</span>
+    }
+
+    @Override
+    public Course updateCourse(Long id, Course course) {
+<span class="pc" id="L43">        return courseRepository.findById(id).map(updatedCourse -&gt; {</span>
+<span class="nc bnc" id="L44" title="All 2 branches missed.">            if (course.getName() != null) updatedCourse.setName(course.getName());</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">            if (course.getLevelId() != null) updatedCourse.setLevelId(course.getLevelId());</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">            if (course.getAcademicYearId() != null) updatedCourse.setAcademicYearId(course.getAcademicYearId());</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">            if (course.getShiftId() != null) updatedCourse.setShiftId(course.getShiftId());</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">            if (course.getHeadTeacherId() != null) updatedCourse.setHeadTeacherId(course.getHeadTeacherId());</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">            if (course.getMaxCapacity() != null) updatedCourse.setMaxCapacity(course.getMaxCapacity());</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">            if (course.getClassroom() != null) updatedCourse.setClassroom(course.getClassroom());</span>
+<span class="nc bnc" id="L51" title="All 2 branches missed.">            if (course.getCourseStatusId() != null) updatedCourse.setCourseStatusId(course.getCourseStatusId());</span>
+
+<span class="nc" id="L53">            validator.validateCourseForSave(updatedCourse);</span>
+<span class="nc" id="L54">            return courseRepository.save(updatedCourse);</span>
+<span class="pc" id="L55">        }).orElseThrow(() -&gt; new NotFoundException(&quot;Curso no encontrado con id &quot; + id));</span>
+    }
+
+    @Override
+    public void deleteCourse(Long id) {
+<span class="fc" id="L60">        courseRepository.deleteById(id);</span>
+<span class="fc" id="L61">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

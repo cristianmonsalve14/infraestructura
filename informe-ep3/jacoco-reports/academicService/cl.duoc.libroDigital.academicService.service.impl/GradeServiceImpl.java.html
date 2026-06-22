@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GradeServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.academicService.service.impl</a> &gt; <span class="el_source">GradeServiceImpl.java</span></div><h1>GradeServiceImpl.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.academicService.service.impl;
+
+import cl.duoc.libroDigital.academicService.exception.NotFoundException;
+import cl.duoc.libroDigital.academicService.model.Grade;
+import cl.duoc.libroDigital.academicService.repository.GradeRepository;
+import cl.duoc.libroDigital.academicService.service.GradeService;
+import cl.duoc.libroDigital.academicService.validation.AcademicEntityValidator;
+
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class GradeServiceImpl implements GradeService {
+
+    private final GradeRepository gradeRepository;
+    private final AcademicEntityValidator validator;
+
+<span class="fc" id="L20">    public GradeServiceImpl(GradeRepository gradeRepository, AcademicEntityValidator validator) {</span>
+<span class="fc" id="L21">        this.gradeRepository = gradeRepository;</span>
+<span class="fc" id="L22">        this.validator = validator;</span>
+<span class="fc" id="L23">    }</span>
+
+    @Override
+    public Grade createGrade(Grade grade) {
+<span class="fc" id="L27">        validator.validateGradeForSave(grade, null);</span>
+<span class="fc" id="L28">        return gradeRepository.save(grade);</span>
+    }
+
+    @Override
+    public List&lt;Grade&gt; getAllGrades() {
+<span class="nc" id="L33">        return gradeRepository.findAll();</span>
+    }
+
+    @Override
+    public Optional&lt;Grade&gt; getGradeById(Long id) {
+<span class="fc" id="L38">        return gradeRepository.findById(id);</span>
+    }
+
+    @Override
+    public Grade updateGrade(Long id, Grade grade) {
+<span class="pc" id="L43">        return gradeRepository.findById(id).map(existing -&gt; {</span>
+<span class="nc bnc" id="L44" title="All 2 branches missed.">            if (grade.getStudentId() != null) existing.setStudentId(grade.getStudentId());</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">            if (grade.getEvaluationId() != null) existing.setEvaluationId(grade.getEvaluationId());</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">            if (grade.getScore() != null) existing.setScore(grade.getScore());</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">            if (grade.getGradeDate() != null) existing.setGradeDate(grade.getGradeDate());</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">            if (grade.getGradeStatusId() != null) existing.setGradeStatusId(grade.getGradeStatusId());</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">            if (grade.getTeacherComments() != null) existing.setTeacherComments(grade.getTeacherComments());</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">            if (grade.getIsAbsent() != null) existing.setIsAbsent(grade.getIsAbsent());</span>
+<span class="nc bnc" id="L51" title="All 2 branches missed.">            if (grade.getGradedByTeacherId() != null) existing.setGradedByTeacherId(grade.getGradedByTeacherId());</span>
+
+<span class="nc" id="L53">            validator.validateGradeForSave(existing, id);</span>
+<span class="nc" id="L54">            return gradeRepository.save(existing);</span>
+<span class="pc" id="L55">        }).orElseThrow(() -&gt; new NotFoundException(&quot;Nota no encontrada con id &quot; + id));</span>
+    }
+
+    @Override
+    public void deleteGrade(Long id) {
+<span class="nc" id="L60">        gradeRepository.deleteById(id);</span>
+<span class="nc" id="L61">    }</span>
+
+    @Override
+    public List&lt;Grade&gt; getGradesByStudentId(Long studentId) {
+<span class="fc" id="L65">        return gradeRepository.findByStudentId(studentId);</span>
+    }
+
+    @Override
+    public List&lt;Grade&gt; getGradesByEvaluationId(Long evaluationId) {
+<span class="nc" id="L70">        return gradeRepository.findByEvaluationId(evaluationId);</span>
+    }
+
+    @Override
+    public List&lt;Grade&gt; getGradesBySubjectId(Long subjectId) {
+<span class="nc" id="L75">        return gradeRepository.findBySubjectId(subjectId);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

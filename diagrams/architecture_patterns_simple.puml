@@ -1,4 +1,4 @@
-@startuml patrones_diseno_simple
+@startuml architecture_patterns_simple
 title Patrones de Diseño - Plataforma Libro de Clases Digital
 
 skinparam shadowing false
@@ -9,114 +9,75 @@ skinparam nodesep 80
 skinparam ranksep 100
 
 ' ============================================
-' CAPA 1: MICROSERVICIOS
+' CAPA 1: MICROSERVICIOS (implementados)
 ' ============================================
 package "MICROSERVICIOS" #E3F2FD {
     rectangle "Auth\nService" as auth #BBDEFB
     rectangle "Academic\nService" as academic #BBDEFB
     rectangle "Attendance\nService" as attendance #BBDEFB
-    rectangle "Messaging\nService" as messaging #BBDEFB
+    rectangle "API\nGateway" as gateway #BBDEFB
 }
 
-' Espaciado invisible
 auth -[hidden]right-> academic
 academic -[hidden]right-> attendance
-attendance -[hidden]right-> messaging
+attendance -[hidden]right-> gateway
 
 ' ============================================
-' CAPA 2: PATRONES DE DISEÑO
+' PATRÓN 1: REPOSITORY (implementado)
 ' ============================================
-
-' PATRÓN 1: REPOSITORY
-package "PATRÓN 1: REPOSITORY" #FFF9C4 {
+package "PATRÓN: REPOSITORY" #FFF9C4 {
     rectangle "Spring Data JPA" as repo #FFF59D {
-        [findByCursoId()]
-        [findByEstudiante()]
+        [findByX()]
         [save() / delete()]
     }
 }
 
 note top of repo
-  <b>Abstrae acceso a datos</b>
-  ✓ Sin SQL manual
-  ✓ Fácil de testear
+  <b>Implementado</b>
+  Abstrae acceso a datos
 end note
 
-' PATRÓN 2: FACTORY METHOD
-package "PATRÓN 2: FACTORY METHOD" #E1BEE7 {
-    rectangle "Factories" as factory #CE93D8 {
-        [AnotacionFactory]
-        [EstudianteFactory]
-        [NotificacionFactory]
-    }
+' ============================================
+' PATRONES PROYECTADOS (no implementados)
+' ============================================
+package "PROYECCIÓN" #F5F5F5 {
+    rectangle "Factory Method" as factory #E0E0E0
+    rectangle "Circuit Breaker" as circuit #E0E0E0
 }
 
-note top of factory
-  <b>Centraliza creación</b>
-  ✓ DTO → Entity
-  ✓ Extensible
+note bottom of factory
+  No implementado en esta fase
 end note
 
-' PATRÓN 3: CIRCUIT BREAKER
-package "PATRÓN 3: CIRCUIT BREAKER" #FFCCBC {
-    rectangle "Resilience4j" as circuit #FFAB91 {
-        [@CircuitBreaker]
-        [Fallback Logic]
-        [CLOSED/OPEN/HALF-OPEN]
-    }
-}
-
-note top of circuit
-  <b>Evita fallos en cascada</b>
-  ✓ Protege servicios
-  ✓ Auto-recuperación
-end note
-
-' Alineación horizontal de patrones
 repo -[hidden]right-> factory
-factory -[hidden]right-> circuit
 
 ' ============================================
-' CAPA 3: BASE DE DATOS
+' BASES DE DATOS (database per service)
 ' ============================================
-database "PostgreSQL" as db #CFD8DC
+database "librodigital_auth" as db_auth #CFD8DC
+database "librodigital_academic" as db_academic #CFD8DC
+database "librodigital_attendance" as db_attendance #CFD8DC
 
 ' ============================================
-' CONEXIONES - GRUPO 1: REPOSITORY
+' CONEXIONES
 ' ============================================
-auth -[#FBC02D,thickness=2]down-> repo : "   usa   "
-academic -[#FBC02D,thickness=2]down-> repo : "   usa   "
-attendance -[#FBC02D,thickness=2]down-> repo : "   usa   "
-messaging -[#FBC02D,thickness=2]down-> repo : "   usa   "
+auth -[#FBC02D,thickness=2]down-> repo
+academic -[#FBC02D,thickness=2]down-> repo
+attendance -[#FBC02D,thickness=2]down-> repo
 
-' ============================================
-' CONEXIONES - GRUPO 2: FACTORY METHOD
-' ============================================
-auth -[#8E24AA,thickness=2,dashed]down-> factory : "   usa   "
-academic -[#8E24AA,thickness=2,dashed]down-> factory : "   usa   "
-attendance -[#8E24AA,thickness=2,dashed]down-> factory : "   usa   "
+repo -[#37474F,thickness=2]down-> db_auth : auth
+repo -[#37474F,thickness=2]down-> db_academic : academic
+repo -[#37474F,thickness=2]down-> db_attendance : attendance
 
-' ============================================
-' CONEXIONES - GRUPO 3: CIRCUIT BREAKER
-' ============================================
-academic -[#FF5722,thickness=3,dotted]down-> circuit : " protegido "
-attendance -[#FF5722,thickness=3,dotted]down-> circuit : " protegido "
-messaging -[#FF5722,thickness=3,dotted]down-> circuit : " protegido "
+gateway -[#1565C0,thickness=2]up-> auth
+gateway -[#1565C0,thickness=2]up-> academic
+gateway -[#1565C0,thickness=2]up-> attendance
 
-' ============================================
-' CONEXIÓN A BASE DE DATOS
-' ============================================
-repo -[#37474F,thickness=4]down-> db : "  accede a  "
-
-' ============================================
-' LEYENDA
-' ============================================
 legend bottom right
-  <b>Tipos de Conexión:</b>
-  <color:#FBC02D>━━━━</color> Repository Pattern
-  <color:#8E24AA>╌╌╌╌</color> Factory Method
-  <color:#FF5722>┄┄┄┄</color> Circuit Breaker
-  <color:#37474F>━━━━</color> Acceso a datos
+  <b>Estado:</b>
+  <color:#FBC02D>━━━━</color> Repository (implementado)
+  <color:#1565C0>━━━━</color> API Gateway
+  <color:#E0E0E0>▭▭▭▭</color> Patrones proyectados
 endlegend
 
 @enduml

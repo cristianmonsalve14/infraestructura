@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>03_informe_pruebas_unitarias</title>
+  <style>
+  @page { margin: 18mm 16mm; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: #1f2937;
+    line-height: 1.55;
+    font-size: 11pt;
+    max-width: 100%;
+  }
+  h1 { color: #1e3a8a; font-size: 22pt; border-bottom: 2px solid #dbeafe; padding-bottom: 8px; }
+  h2 { color: #1d4ed8; font-size: 15pt; margin-top: 1.4em; }
+  h3 { color: #2563eb; font-size: 12.5pt; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 10pt; }
+  th, td { border: 1px solid #d1d5db; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #eff6ff; }
+  code { background: #f3f4f6; padding: 1px 4px; border-radius: 4px; font-size: 9.5pt; }
+  pre { background: #111827; color: #f9fafb; padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 9pt; }
+  pre code { background: transparent; color: inherit; }
+  img { max-width: 100%; height: auto; margin: 12px 0; }
+  blockquote { border-left: 4px solid #93c5fd; margin: 12px 0; padding: 4px 12px; color: #4b5563; }
+  hr { border: none; border-top: 1px solid #e5e7eb; margin: 20px 0; }
+</style>
+</head>
+<body><h1>03 — Informe de Pruebas Unitarias</h1>
+<p><strong>Proyecto:</strong> Plataforma Libro de Clases Digital<br><strong>Asignatura:</strong> DSY1106 — Desarrollo Fullstack III<br><strong>Evaluación:</strong> Parcial N°3 — Encargo<br><strong>Equipo:</strong> Cristian Monsalve / Héctor Olivares<br><strong>Fecha de ejecución:</strong> 2026-06-20  </p>
+<hr>
+<h2>1. Resumen ejecutivo</h2>
+<p>Se implementaron <strong>pruebas unitarias y de capa web</strong> en los cuatro módulos backend Java, utilizando <strong>JUnit 5</strong>, <strong>Mockito</strong> y <strong>Spring Boot Test</strong>. La cobertura de código se mide con <strong>JaCoCo 0.8.12</strong>, integrado en el ciclo <code>mvn test</code> de cada microservicio.</p>
+<table>
+<thead>
+<tr>
+<th>Servicio</th>
+<th>Clases de test</th>
+<th>Métodos de test</th>
+<th>Cobertura instrucciones</th>
+<th>Cobertura ramas</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>authService</strong></td>
+<td>7</td>
+<td>33</td>
+<td><strong>91 %</strong></td>
+<td><strong>71 %</strong></td>
+</tr>
+<tr>
+<td><strong>academicService</strong></td>
+<td>27</td>
+<td>147</td>
+<td><strong>71 %</strong></td>
+<td><strong>49 %</strong></td>
+</tr>
+<tr>
+<td><strong>attendanceService</strong></td>
+<td>13</td>
+<td>84</td>
+<td><strong>80 %</strong></td>
+<td><strong>60 %</strong></td>
+</tr>
+<tr>
+<td><strong>apiGetaway</strong></td>
+<td>1</td>
+<td>1</td>
+<td>N/A*</td>
+<td>N/A*</td>
+</tr>
+<tr>
+<td><strong>frontend-react</strong></td>
+<td>10</td>
+<td>53</td>
+<td><strong>6 %</strong> global**</td>
+<td><strong>3 %</strong> global**</td>
+</tr>
+<tr>
+<td><strong>Total proyecto</strong></td>
+<td><strong>58</strong></td>
+<td><strong>318</strong></td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p>* <code>apiGetaway</code> solo contiene configuración de rutas; el test <code>contextLoads</code> verifica el arranque del contexto Spring. JaCoCo no reporta clases instrumentables en este módulo.</p>
+<p>** Cobertura global del frontend (incluye pantallas CRUD sin tests E2E). Los <strong>módulos críticos probados</strong> alcanzan cobertura alta: <code>permissions.ts</code> 94 %, <code>Login.tsx</code> 92 %, <code>client.ts</code> 100 %, validadores 80–97 %.</p>
+<p><strong>Resultado global:</strong> <code>BUILD SUCCESS</code> (backend) + <strong>53/53 tests OK</strong> (frontend) — <strong>318 tests</strong>, <strong>0 fallos</strong>.</p>
+<hr>
+<h2>2. Herramientas y configuración</h2>
+<table>
+<thead>
+<tr>
+<th>Herramienta</th>
+<th>Versión</th>
+<th>Uso</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>JUnit Jupiter</td>
+<td>5.x (vía Spring Boot)</td>
+<td>Framework de pruebas</td>
+</tr>
+<tr>
+<td>Mockito</td>
+<td>5.x</td>
+<td>Mocks de repositorios y dependencias</td>
+</tr>
+<tr>
+<td>Spring Boot Test</td>
+<td>4.1.0</td>
+<td><code>@WebMvcTest</code>, <code>@ExtendWith</code>, contexto Spring</td>
+</tr>
+<tr>
+<td>JaCoCo Maven Plugin</td>
+<td>0.8.12</td>
+<td>Cobertura de código</td>
+</tr>
+<tr>
+<td>Maven Surefire</td>
+<td>3.x</td>
+<td>Ejecución de tests en <code>mvn test</code></td>
+</tr>
+<tr>
+<td>Vitest</td>
+<td>4.x</td>
+<td>Tests unitarios frontend</td>
+</tr>
+<tr>
+<td>React Testing Library</td>
+<td>16.x</td>
+<td>Tests de componentes React</td>
+</tr>
+<tr>
+<td>@vitest/coverage-v8</td>
+<td>4.x</td>
+<td>Cobertura de código frontend</td>
+</tr>
+</tbody></table>
+<p>Configuración JaCoCo en <code>pom.xml</code> (ejemplo <code>authService</code>):</p>
+<pre><code class="language-xml">&lt;plugin&gt;
+    &lt;groupId&gt;org.jacoco&lt;/groupId&gt;
+    &lt;artifactId&gt;jacoco-maven-plugin&lt;/artifactId&gt;
+    &lt;version&gt;0.8.12&lt;/version&gt;
+    &lt;executions&gt;
+        &lt;execution&gt;
+            &lt;goals&gt;&lt;goal&gt;prepare-agent&lt;/goal&gt;&lt;/goals&gt;
+        &lt;/execution&gt;
+        &lt;execution&gt;
+            &lt;id&gt;report&lt;/id&gt;
+            &lt;phase&gt;test&lt;/phase&gt;
+            &lt;goals&gt;&lt;goal&gt;report&lt;/goal&gt;&lt;/goals&gt;
+        &lt;/execution&gt;
+    &lt;/executions&gt;
+&lt;/plugin&gt;
+</code></pre>
+<hr>
+<h2>3. Cómo ejecutar las pruebas y generar reportes</h2>
+<h3>3.1 Por microservicio</h3>
+<pre><code class="language-powershell">cd authService
+mvn clean test jacoco:report
+# Reporte HTML: target/site/jacoco/index.html
+
+cd ../academicService
+mvn clean test jacoco:report
+
+cd ../attendanceService
+mvn clean test jacoco:report
+
+cd ../apiGetaway
+mvn clean test
+</code></pre>
+<h3>3.2 Todos los backends (desde la raíz del workspace)</h3>
+<pre><code class="language-powershell">foreach ($s in @(&quot;authService&quot;,&quot;academicService&quot;,&quot;attendanceService&quot;,&quot;apiGetaway&quot;)) {
+    Push-Location $s
+    mvn clean test jacoco:report -q
+    Pop-Location
+}
+</code></pre>
+<h3>3.3 Ubicación de reportes</h3>
+<table>
+<thead>
+<tr>
+<th>Servicio</th>
+<th>Reporte JaCoCo HTML</th>
+<th>Reportes Surefire</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>authService</td>
+<td><code>authService/target/site/jacoco/index.html</code></td>
+<td><code>authService/target/surefire-reports/</code></td>
+</tr>
+<tr>
+<td>academicService</td>
+<td><code>academicService/target/site/jacoco/index.html</code></td>
+<td><code>academicService/target/surefire-reports/</code></td>
+</tr>
+<tr>
+<td>attendanceService</td>
+<td><code>attendanceService/target/site/jacoco/index.html</code></td>
+<td><code>attendanceService/target/surefire-reports/</code></td>
+</tr>
+</tbody></table>
+<p>Copias para el encargo: <code>informe-ep3/jacoco-reports/{servicio}/index.html</code></p>
+<hr>
+<h2>4. Métricas de cobertura por servicio</h2>
+<h3>4.1 authService — 91 % instrucciones</h3>
+<table>
+<thead>
+<tr>
+<th>Paquete</th>
+<th>Instrucciones</th>
+<th>Ramas</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>controller</code></td>
+<td>97 %</td>
+<td>75 %</td>
+</tr>
+<tr>
+<td><code>service.impl</code></td>
+<td>90 %</td>
+<td>71 %</td>
+</tr>
+<tr>
+<td><code>util</code></td>
+<td>82 %</td>
+<td>50 %</td>
+</tr>
+<tr>
+<td><code>exception</code></td>
+<td>100 %</td>
+<td>n/a</td>
+</tr>
+</tbody></table>
+<p><strong>Clases de test (7):</strong></p>
+<ul>
+<li><code>AuthControllerTest</code> — login, perfil, errores HTTP</li>
+<li><code>AdminUserControllerTest</code> — CRUD usuarios admin</li>
+<li><code>AuthServiceImplTest</code> — lógica login/registro</li>
+<li><code>AdminUserServiceImplTest</code> — provisión de usuarios</li>
+<li><code>JwtFilterTest</code> — filtro de seguridad</li>
+<li><code>JwtUtilTest</code> — generación y validación JWT</li>
+<li><code>GlobalExceptionHandlerTest</code> — respuestas de error estandarizadas</li>
+</ul>
+<h3>4.2 academicService — 71 % instrucciones</h3>
+<table>
+<thead>
+<tr>
+<th>Paquete</th>
+<th>Instrucciones</th>
+<th>Ramas</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>exception</code></td>
+<td>98 %</td>
+<td>72 %</td>
+</tr>
+<tr>
+<td><code>util</code></td>
+<td>94 %</td>
+<td>82 %</td>
+</tr>
+<tr>
+<td><code>security</code></td>
+<td>76 %</td>
+<td>59 %</td>
+</tr>
+<tr>
+<td><code>controller</code></td>
+<td>73 %</td>
+<td>45 %</td>
+</tr>
+<tr>
+<td><code>service</code></td>
+<td>69 %</td>
+<td>47 %</td>
+</tr>
+<tr>
+<td><code>validation</code></td>
+<td>64 %</td>
+<td>34 %</td>
+</tr>
+<tr>
+<td><code>service.impl</code></td>
+<td>58 %</td>
+<td>37 %</td>
+</tr>
+</tbody></table>
+<p><strong>Clases de test (27):</strong> cubren controllers (estudiantes, cursos, docentes, matrículas, evaluaciones, notas, apoderados), servicios, validadores, seguridad JWT y manejo de excepciones.</p>
+<h3>4.3 attendanceService — 80 % instrucciones</h3>
+<table>
+<thead>
+<tr>
+<th>Paquete</th>
+<th>Instrucciones</th>
+<th>Ramas</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>validation</code></td>
+<td>100 %</td>
+<td>94 %</td>
+</tr>
+<tr>
+<td><code>exception</code></td>
+<td>100 %</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td><code>service</code></td>
+<td>94 %</td>
+<td>66 %</td>
+</tr>
+<tr>
+<td><code>security</code></td>
+<td>82 %</td>
+<td>76 %</td>
+</tr>
+<tr>
+<td><code>util</code></td>
+<td>80 %</td>
+<td>33 %</td>
+</tr>
+<tr>
+<td><code>controller</code></td>
+<td>74 %</td>
+<td>40 %</td>
+</tr>
+<tr>
+<td><code>service.impl</code></td>
+<td>73 %</td>
+<td>35 %</td>
+</tr>
+</tbody></table>
+<p><strong>Clases de test (13):</strong> sesiones, asistencia, anotaciones, servicios, validación, JWT y excepciones.</p>
+<h3>4.4 apiGetaway — smoke test</h3>
+<ul>
+<li><code>ApiGetawayApplicationTests.contextLoads</code> — verifica que el contexto Spring Boot arranca correctamente con la configuración de rutas del gateway.</li>
+</ul>
+<hr>
+<h2>5. Gráfico de cobertura (instrucciones)</h2>
+<pre><code>authService       ██████████████████████████████████████████████  91%
+attendanceService ████████████████████████████████████████        80%
+academicService   ███████████████████████████████████             71%
+apiGetaway        ░ (smoke test — sin métricas JaCoCo)
+</code></pre>
+<hr>
+<h2>6. Ejemplos de pruebas realizadas</h2>
+<h3>6.1 authService — Login exitoso (<code>AuthServiceImplTest</code>)</h3>
+<pre><code class="language-java">@Test
+void login_success() {
+    LoginRequest request = new LoginRequest();
+    request.setUsername(&quot;prof_castillo&quot;);
+    request.setPassword(&quot;test1234&quot;);
+
+    when(userRepository.findByUsername(&quot;prof_castillo&quot;)).thenReturn(Optional.of(user));
+    when(passwordEncoder.matches(&quot;test1234&quot;, &quot;encoded&quot;)).thenReturn(true);
+    when(jwtUtil.generateToken(user)).thenReturn(&quot;mock-jwt-token&quot;);
+
+    AuthResponse response = authService.login(request);
+
+    assertNotNull(response.getAccessToken());
+    assertEquals(&quot;mock-jwt-token&quot;, response.getAccessToken());
+    verify(userRepository).findByUsername(&quot;prof_castillo&quot;);
+}
+</code></pre>
+<p><strong>Resultado:</strong> <code>Tests run: 4, Failures: 0, Errors: 0</code> (clase <code>AuthControllerTest</code>)</p>
+<h3>6.2 academicService — Controller con MockMvc</h3>
+<p>Las pruebas de controllers usan <code>@WebMvcTest</code> + <code>MockMvc</code> para simular peticiones HTTP sin levantar la BD:</p>
+<pre><code class="language-java">@WebMvcTest(StudentController.class)
+class StudentControllerTest {
+    @Autowired MockMvc mockMvc;
+    @MockBean StudentService studentService;
+    @MockBean JwtFilter jwtFilter;
+
+    @Test
+    @WithMockUser(roles = &quot;ADMIN&quot;)
+    void listStudents_returns200() throws Exception {
+        when(studentService.findAll()).thenReturn(List.of());
+        mockMvc.perform(get(&quot;/students&quot;))
+               .andExpect(status().isOk());
+    }
+}
+</code></pre>
+<h3>6.3 attendanceService — Validación de negocio</h3>
+<pre><code class="language-java">@Test
+void createAttendance_invalidStudent_throwsException() {
+    when(studentValidator.exists(999L)).thenReturn(false);
+    assertThrows(ResourceNotFoundException.class,
+        () -&gt; attendanceService.create(dtoWithStudent(999L)));
+}
+</code></pre>
+<h3>6.4 Resultado Surefire (extracto real)</h3>
+<pre><code>Test set: cl.duoc.libroDigital.authService.controller.AuthControllerTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.238 s
+</code></pre>
+<hr>
+<h2>7. Organización del código de pruebas</h2>
+<pre><code>{servicio}/src/test/java/
+└── cl/duoc/libroDigital/{servicio}/
+    ├── controller/     ← @WebMvcTest, MockMvc
+    ├── service/        ← @ExtendWith(MockitoExtension.class)
+    ├── security/       ← JwtFilter, SecurityConfig
+    ├── util/           ← JwtUtil, helpers
+    ├── validation/     ← reglas de negocio
+    └── exception/      ← GlobalExceptionHandler
+</code></pre>
+<p>Convenciones:</p>
+<ul>
+<li>Nombre de clase: <code>{ClaseBajoPrueba}Test</code></li>
+<li>Métodos: <code>{acción}_{escenario}</code> (ej. <code>login_success</code>, <code>login_invalidPassword</code>)</li>
+<li>Sin dependencia de PostgreSQL en tests unitarios (repositorios mockeados)</li>
+</ul>
+<hr>
+<h2>8. Componente frontend (<code>frontend-react</code>)</h2>
+<h3>8.1 Herramientas</h3>
+<table>
+<thead>
+<tr>
+<th>Herramienta</th>
+<th>Uso</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Vitest 4</strong></td>
+<td>Runner de pruebas (integrado con Vite)</td>
+</tr>
+<tr>
+<td><strong>React Testing Library</strong></td>
+<td>Renderizado y interacción en componentes</td>
+</tr>
+<tr>
+<td><strong>@vitest/coverage-v8</strong></td>
+<td>Métricas de cobertura (reporte HTML)</td>
+</tr>
+<tr>
+<td><strong>jsdom</strong></td>
+<td>Entorno DOM para tests sin navegador</td>
+</tr>
+</tbody></table>
+<h3>8.2 Ejecución</h3>
+<pre><code class="language-powershell">cd frontend-react
+npm install
+npm test              # ejecutar una vez
+npm run test:watch    # modo interactivo
+npm run test:coverage # genera reporte en coverage/index.html
+</code></pre>
+<h3>8.3 Resultados (2026-06-20)</h3>
+<table>
+<thead>
+<tr>
+<th>Métrica</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Archivos de test</td>
+<td><strong>10</strong></td>
+</tr>
+<tr>
+<td>Tests ejecutados</td>
+<td><strong>53</strong></td>
+</tr>
+<tr>
+<td>Fallos</td>
+<td><strong>0</strong></td>
+</tr>
+<tr>
+<td>Cobertura global (líneas)</td>
+<td><strong>6,22 %</strong></td>
+</tr>
+<tr>
+<td>Cobertura global (ramas)</td>
+<td><strong>3,49 %</strong></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>La cobertura global es baja porque las pantallas CRUD (<code>Students.tsx</code>, <code>Grades.tsx</code>, etc.) tienen miles de líneas y se validan manualmente. La estrategia prioriza <strong>lógica crítica desacoplada</strong>: autenticación, permisos RBAC y validadores de formulario.</p>
+</blockquote>
+<h3>8.4 Cobertura por módulo crítico</h3>
+<table>
+<thead>
+<tr>
+<th>Archivo / paquete</th>
+<th>Líneas</th>
+<th>Ramas</th>
+<th>Qué se prueba</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>auth/permissions.ts</code></td>
+<td><strong>94 %</strong></td>
+<td><strong>88 %</strong></td>
+<td>RBAC por rol, módulos, permisos CRUD</td>
+</tr>
+<tr>
+<td><code>auth/AuthContext.tsx</code></td>
+<td><strong>86 %</strong></td>
+<td><strong>64 %</strong></td>
+<td>Sesión, login, logout, localStorage</td>
+</tr>
+<tr>
+<td><code>Login.tsx</code></td>
+<td><strong>92 %</strong></td>
+<td><strong>64 %</strong></td>
+<td>Validación, login exitoso, errores API</td>
+</tr>
+<tr>
+<td><code>api/client.ts</code></td>
+<td><strong>100 %</strong></td>
+<td><strong>83 %</strong></td>
+<td>URLs, headers JWT</td>
+</tr>
+<tr>
+<td><code>utils/formatRut.ts</code></td>
+<td><strong>97 %</strong></td>
+<td><strong>68 %</strong></td>
+<td>Validación RUT chileno</td>
+</tr>
+<tr>
+<td><code>utils/validateEmail.ts</code></td>
+<td><strong>100 %</strong></td>
+<td><strong>67 %</strong></td>
+<td>Formato email</td>
+</tr>
+<tr>
+<td><code>utils/validatePhone.ts</code></td>
+<td><strong>93 %</strong></td>
+<td><strong>85 %</strong></td>
+<td>Teléfonos chilenos</td>
+</tr>
+<tr>
+<td><code>utils/validateDate.ts</code></td>
+<td><strong>95 %</strong></td>
+<td><strong>85 %</strong></td>
+<td>Fechas, ponderaciones</td>
+</tr>
+</tbody></table>
+<h3>8.5 Organización de tests</h3>
+<pre><code>frontend-react/src/
+├── api/client.test.ts
+├── auth/
+│   ├── AuthContext.test.tsx
+│   └── permissions.test.ts
+├── Login.test.tsx
+└── utils/
+    ├── formatRut.test.ts
+    ├── formatStudentFullName.test.ts
+    ├── sortById.test.ts
+    ├── validateDate.test.ts
+    ├── validateEmail.test.ts
+    └── validatePhone.test.ts
+</code></pre>
+<h3>8.6 Ejemplo — permisos RBAC (<code>permissions.test.ts</code>)</h3>
+<pre><code class="language-typescript">it(&quot;teacher cannot access admin-only modules&quot;, () =&gt; {
+  expect(canAccessModule([&quot;DOCENTE&quot;], &quot;guardians&quot;)).toBe(false);
+  expect(canAccessModule([&quot;DOCENTE&quot;], &quot;enrollments&quot;)).toBe(false);
+});
+
+it(&quot;admin can create in writable modules but not read-only ones&quot;, () =&gt; {
+  expect(canCreateInModule([&quot;ADMINISTRADOR&quot;], &quot;courses&quot;)).toBe(true);
+  expect(canCreateInModule([&quot;ADMINISTRADOR&quot;], &quot;attendance&quot;)).toBe(false);
+});
+</code></pre>
+<h3>8.7 Ejemplo — Login (<code>Login.test.tsx</code>)</h3>
+<pre><code class="language-typescript">it(&quot;shows validation error when fields are empty&quot;, async () =&gt; {
+  renderLogin();
+  fireEvent.click(screen.getByRole(&quot;button&quot;, { name: &quot;Ingresar&quot; }));
+  expect(await screen.findByText(/usuario y contraseña/i)).toBeInTheDocument();
+});
+</code></pre>
+<h3>8.8 Reporte de cobertura</h3>
+<ul>
+<li><strong>HTML:</strong> <code>frontend-react/coverage/index.html</code> (generar con <code>npm run test:coverage</code>)</li>
+<li><strong>Copia para encargo:</strong> <code>informe-ep3/coverage-frontend/index.html</code></li>
+</ul>
+<h3>8.9 Gráfico comparativo (módulos críticos frontend)</h3>
+<pre><code>permissions.ts    ██████████████████████████████████████████████  94%
+Login.tsx         █████████████████████████████████████████████   92%
+validateDate.ts   ██████████████████████████████████████████████  95%
+AuthContext.tsx   ███████████████████████████████████████████     86%
+client.ts         ██████████████████████████████████████████████ 100%
+</code></pre>
+<hr>
+<h2>9. Pruebas de integración (complementarias)</h2>
+<p>Además de las unitarias, se dispone de:</p>
+<table>
+<thead>
+<tr>
+<th>Herramienta</th>
+<th>Archivo</th>
+<th>Alcance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Postman</td>
+<td><code>infraestructura/postman/Libro_Digital.postman_collection.json</code></td>
+<td>Flujo login → CRUD vía gateway :8090</td>
+</tr>
+<tr>
+<td>Manual E2E</td>
+<td>Frontend + 4 backends levantados</td>
+<td>Flujos por rol en navegador</td>
+</tr>
+</tbody></table>
+<p>Ver guía: <code>infraestructura/postman/README.md</code></p>
+<hr>
+<h2>10. Análisis y conclusiones</h2>
+<h3>Fortalezas</h3>
+<ul>
+<li><strong>318 tests</strong> automatizados (265 backend + 53 frontend) con <strong>0 fallos</strong></li>
+<li>Cobertura <strong>≥ 71 %</strong> en los tres microservicios con lógica de negocio</li>
+<li><strong>authService</strong> alcanza <strong>91 %</strong> — núcleo de seguridad bien cubierto</li>
+<li><strong>Frontend:</strong> RBAC, login y validadores con <strong>86–100 %</strong> en módulos críticos</li>
+<li>Tests aislados (mocks) — ejecución rápida</li>
+<li>Reportes JaCoCo (backend) y Vitest HTML (frontend) incluidos en el encargo</li>
+</ul>
+<h3>Áreas de mejora</h3>
+<ul>
+<li>Ramas (<code>branches</code>) en academicService (49 %) — ampliar casos edge en validadores</li>
+<li><code>apiGetaway</code> — agregar tests de integración de rutas con <code>WebTestClient</code></li>
+<li>Frontend — ampliar cobertura a pantallas CRUD con tests de integración (MSW + RTL)</li>
+</ul>
+<h3>Conclusión</h3>
+<p>Las pruebas unitarias garantizan la calidad de los componentes críticos (autenticación JWT, CRUD académico, registro de asistencia, permisos y validaciones del frontend) y proporcionan <strong>métricas objetivas de cobertura</strong> mediante JaCoCo y Vitest, cumpliendo los requisitos del informe de la Evaluación Parcial N°3.</p>
+</body>
+</html>

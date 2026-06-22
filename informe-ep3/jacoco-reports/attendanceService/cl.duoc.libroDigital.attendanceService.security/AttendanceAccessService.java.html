@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AttendanceAccessService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">attendanceService</a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.attendanceService.security</a> &gt; <span class="el_source">AttendanceAccessService.java</span></div><h1>AttendanceAccessService.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.attendanceService.security;
+
+import cl.duoc.libroDigital.attendanceService.client.AcademicApiClient;
+import cl.duoc.libroDigital.attendanceService.exception.ForbiddenException;
+import cl.duoc.libroDigital.attendanceService.model.Annotation;
+import cl.duoc.libroDigital.attendanceService.model.AttendanceRecord;
+import cl.duoc.libroDigital.attendanceService.model.ClassSession;
+import cl.duoc.libroDigital.attendanceService.repository.AnnotationRepository;
+import cl.duoc.libroDigital.attendanceService.repository.AttendanceRecordRepository;
+import cl.duoc.libroDigital.attendanceService.repository.ClassSessionRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import java.util.Optional;
+
+@Service
+public class AttendanceAccessService {
+
+    private final ClassSessionRepository classSessionRepository;
+    private final AttendanceRecordRepository attendanceRecordRepository;
+    private final AnnotationRepository annotationRepository;
+    private final AcademicApiClient academicApiClient;
+
+<span class="fc" id="L29">    public AttendanceAccessService(</span>
+            ClassSessionRepository classSessionRepository,
+            AttendanceRecordRepository attendanceRecordRepository,
+            AnnotationRepository annotationRepository,
+            AcademicApiClient academicApiClient) {
+<span class="fc" id="L34">        this.classSessionRepository = classSessionRepository;</span>
+<span class="fc" id="L35">        this.attendanceRecordRepository = attendanceRecordRepository;</span>
+<span class="fc" id="L36">        this.annotationRepository = annotationRepository;</span>
+<span class="fc" id="L37">        this.academicApiClient = academicApiClient;</span>
+<span class="fc" id="L38">    }</span>
+
+    public boolean isAdmin() {
+<span class="fc" id="L41">        return hasRole(&quot;ADMINISTRADOR&quot;);</span>
+    }
+
+    public boolean isTeacher() {
+<span class="fc" id="L45">        return hasRole(&quot;DOCENTE&quot;);</span>
+    }
+
+    public boolean isGuardian() {
+<span class="fc" id="L49">        return hasRole(&quot;APODERADO&quot;);</span>
+    }
+
+    public boolean isStudent() {
+<span class="fc" id="L53">        return hasRole(&quot;ESTUDIANTE&quot;);</span>
+    }
+
+    public void requireAdmin() {
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        if (!isAdmin()) {</span>
+<span class="fc" id="L58">            throw new ForbiddenException(&quot;Solo administración puede realizar esta acción&quot;);</span>
+        }
+<span class="nc" id="L60">    }</span>
+
+    public void requireTeacherForPedagogicalWrite() {
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if (isAdmin()) {</span>
+<span class="fc" id="L64">            throw new ForbiddenException(&quot;La administración solo puede consultar asistencia y anotaciones, no modificarlas&quot;);</span>
+        }
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">        if (!isTeacher()) {</span>
+<span class="nc" id="L67">            throw new ForbiddenException(&quot;No tiene permisos para esta acción&quot;);</span>
+        }
+<span class="fc" id="L69">    }</span>
+
+    public Long requireTeacherId() {
+<span class="fc" id="L72">        return currentTeacherId()</span>
+<span class="fc" id="L73">                .orElseThrow(() -&gt; new ForbiddenException(&quot;No hay un profesor vinculado a esta cuenta&quot;));</span>
+    }
+
+    public Optional&lt;Long&gt; currentTeacherId() {
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (isAdmin()) {</span>
+<span class="fc" id="L78">            return Optional.empty();</span>
+        }
+<span class="fc" id="L80">        return academicApiClient.getCurrentTeacherId(resolveAuthorizationHeader());</span>
+    }
+
+    public void ensureCanReadStudent(Long studentId) {
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        if (isAdmin()) {</span>
+<span class="fc" id="L85">            return;</span>
+        }
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        if (!academicApiClient.canReadStudent(resolveAuthorizationHeader(), studentId)) {</span>
+<span class="fc" id="L88">            throw new ForbiddenException(&quot;No puede acceder a este estudiante&quot;);</span>
+        }
+<span class="fc" id="L90">    }</span>
+
+    public void ensureCanAccessSession(Long sessionId) {
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">        if (isAdmin()) {</span>
+<span class="nc" id="L94">            return;</span>
+        }
+<span class="fc" id="L96">        Long teacherId = requireTeacherId();</span>
+<span class="fc" id="L97">        ClassSession session = classSessionRepository.findById(sessionId)</span>
+<span class="fc" id="L98">                .orElseThrow(() -&gt; new ForbiddenException(&quot;Sesión no encontrada&quot;));</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">        if (!teacherId.equals(session.getTeacherId())) {</span>
+<span class="fc" id="L100">            throw new ForbiddenException(&quot;No puede acceder a esta sesión&quot;);</span>
+        }
+<span class="fc" id="L102">    }</span>
+
+    public void ensureCanManageSession(ClassSession session) {
+<span class="fc" id="L105">        requireTeacherForPedagogicalWrite();</span>
+<span class="fc" id="L106">        Long teacherId = requireTeacherId();</span>
+<span class="pc bpc" id="L107" title="1 of 4 branches missed.">        if (session.getTeacherId() != null &amp;&amp; !teacherId.equals(session.getTeacherId())) {</span>
+<span class="fc" id="L108">            throw new ForbiddenException(&quot;No puede gestionar esta sesión&quot;);</span>
+        }
+<span class="fc" id="L110">    }</span>
+
+    public void ensureCanManageAttendance(Long attendanceId) {
+<span class="fc" id="L113">        requireTeacherForPedagogicalWrite();</span>
+<span class="fc" id="L114">        AttendanceRecord record = attendanceRecordRepository.findById(attendanceId)</span>
+<span class="pc" id="L115">                .orElseThrow(() -&gt; new ForbiddenException(&quot;Registro de asistencia no encontrado&quot;));</span>
+<span class="fc" id="L116">        ensureCanAccessSession(record.getSessionId());</span>
+<span class="fc" id="L117">    }</span>
+
+    public void ensureCanManageAnnotation(Long annotationId) {
+<span class="fc" id="L120">        requireTeacherForPedagogicalWrite();</span>
+<span class="fc" id="L121">        Long teacherId = requireTeacherId();</span>
+<span class="fc" id="L122">        Annotation annotation = annotationRepository.findById(annotationId)</span>
+<span class="pc" id="L123">                .orElseThrow(() -&gt; new ForbiddenException(&quot;Anotación no encontrada&quot;));</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        if (!teacherId.equals(annotation.getTeacherId())) {</span>
+<span class="fc" id="L125">            throw new ForbiddenException(&quot;No puede gestionar esta anotación&quot;);</span>
+        }
+<span class="fc" id="L127">    }</span>
+
+    public String resolveAuthorizationHeader() {
+<span class="fc" id="L130">        ServletRequestAttributes attributes =</span>
+<span class="fc" id="L131">                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();</span>
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">        if (attributes == null) {</span>
+<span class="fc" id="L133">            return null;</span>
+        }
+<span class="nc" id="L135">        HttpServletRequest request = attributes.getRequest();</span>
+<span class="nc" id="L136">        return request.getHeader(&quot;Authorization&quot;);</span>
+    }
+
+    public Optional&lt;String&gt; resolveStudentName(Long studentId) {
+<span class="fc" id="L140">        return academicApiClient.getStudentName(resolveAuthorizationHeader(), studentId);</span>
+    }
+
+    public Optional&lt;String&gt; resolveSubjectName(Long subjectId) {
+<span class="fc" id="L144">        return academicApiClient.getSubjectName(resolveAuthorizationHeader(), subjectId);</span>
+    }
+
+    private boolean hasRole(String role) {
+<span class="fc" id="L148">        Authentication auth = SecurityContextHolder.getContext().getAuthentication();</span>
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">        if (auth == null) {</span>
+<span class="nc" id="L150">            return false;</span>
+        }
+<span class="fc" id="L152">        String roleAuthority = &quot;ROLE_&quot; + role;</span>
+<span class="fc" id="L153">        return auth.getAuthorities().stream()</span>
+<span class="fc" id="L154">                .map(GrantedAuthority::getAuthority)</span>
+<span class="pc bpc" id="L155" title="1 of 4 branches missed.">                .anyMatch(authority -&gt; authority.equals(roleAuthority) || authority.equals(role));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

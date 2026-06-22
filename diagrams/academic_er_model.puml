@@ -1,0 +1,193 @@
+@startuml academic_er_model
+title Diagrama Entidad-Relación - AcademicService (librodigital_academic)
+
+skinparam linetype ortho
+skinparam entity {
+  BackgroundColor #F9F9F9
+  BorderColor #2D4159
+  FontSize 12
+}
+
+package "Catálogos" #EEF2F7 {
+  entity "student_statuses" as ss {
+    *id : SMALLINT <<PK>>
+    --
+    code, label
+  }
+  entity "teacher_statuses" as ts {
+    *id : SMALLINT <<PK>>
+    --
+    code, label
+  }
+  entity "course_statuses" as cs_st {
+    *id : SMALLINT <<PK>>
+    --
+    code, label
+  }
+  entity "enrollment_statuses" as es {
+    *id : SMALLINT <<PK>>
+    --
+    code, label
+  }
+  entity "evaluation_types" as et {
+    *id : SMALLINT <<PK>>
+    --
+    code, label
+  }
+  entity "evaluation_statuses" as evs {
+    *id : SMALLINT <<PK>>
+    --
+    code, label
+  }
+  entity "grade_statuses" as gs_st {
+    *id : SMALLINT <<PK>>
+    --
+    code, label
+  }
+  entity "relationship_types" as rt {
+    *id : SMALLINT <<PK>>
+    --
+    code, label
+  }
+  entity "contract_types" as ct {
+    *id : SMALLINT <<PK>>
+    --
+    code, label
+  }
+  entity "subject_types" as st {
+    *id : SMALLINT <<PK>>
+    --
+    code, label
+  }
+  entity "shifts" as sh {
+    *id : SMALLINT <<PK>>
+    --
+    code, label
+  }
+  entity "education_levels" as el {
+    *id : SMALLINT <<PK>>
+    --
+    code, label, stage
+  }
+  entity "academic_years" as ay {
+    *id : SMALLINT <<PK>>
+    --
+    year, code, start_date
+  }
+}
+
+package "Entidades principales" #FFFFFF {
+  entity "guardians" as g {
+    *id : BIGINT <<PK>>
+    --
+    rut, nombres, email, phone
+    relationship_id : SMALLINT <<FK>>
+    user_id : BIGINT <<lógico auth>>
+  }
+
+  entity "teachers" as t {
+    *id : BIGINT <<PK>>
+    --
+    rut, nombres, email
+    teacher_status_id : SMALLINT <<FK>>
+    contract_type_id : SMALLINT <<FK>>
+    auth_username, user_id <<lógico auth>>
+  }
+
+  entity "students" as s {
+    *id : BIGINT <<PK>>
+    --
+    rut <<UNIQUE>>, nombres
+    student_status_id : SMALLINT <<FK>>
+    guardian_id : BIGINT <<FK>>
+    user_id : BIGINT <<lógico auth>>
+  }
+
+  entity "courses" as c {
+    *id : BIGINT <<PK>>
+    --
+    name
+    head_teacher_id : BIGINT <<FK>>
+    course_status_id : SMALLINT <<FK>>
+    shift_id : SMALLINT <<FK>>
+    level_id : SMALLINT <<FK>>
+    academic_year_id : SMALLINT <<FK>>
+  }
+
+  entity "subjects" as sub {
+    *id : BIGINT <<PK>>
+    --
+    subject_name, subject_code
+    teacher_id : BIGINT <<FK>>
+    course_id : BIGINT <<FK>>
+    subject_type_id : SMALLINT <<FK>>
+  }
+
+  entity "enrollments" as enr {
+    *id : BIGINT <<PK>>
+    --
+    student_id : BIGINT <<FK>>
+    course_id : BIGINT <<FK>>
+    academic_year_id : SMALLINT <<FK>>
+    enrollment_status_id : SMALLINT <<FK>>
+  }
+
+  entity "evaluations" as ev {
+    *id : BIGINT <<PK>>
+    --
+    name, date, max_score, weight
+    subject_id : BIGINT <<FK>>
+    evaluation_type_id : SMALLINT <<FK>>
+    evaluation_status_id : SMALLINT <<FK>>
+  }
+
+  entity "grades" as gr {
+    *id : BIGINT <<PK>>
+    --
+    score, grade_date
+    student_id : BIGINT <<FK>>
+    evaluation_id : BIGINT <<FK>>
+    grade_status_id : SMALLINT <<FK>>
+    graded_by_teacher_id : BIGINT <<FK>>
+  }
+}
+
+' Relaciones principales
+g ||--o{ s : guardian_id
+t ||--o{ c : head_teacher_id
+t ||--o{ sub : teacher_id
+c ||--o{ sub : course_id
+s ||--o{ enr : student_id
+c ||--o{ enr : course_id
+sub ||--o{ ev : subject_id
+s ||--o{ gr : student_id
+ev ||--o{ gr : evaluation_id
+t ||--o{ gr : graded_by
+
+' Catálogos
+ss ||--o{ s : student_status_id
+ts ||--o{ t : teacher_status_id
+ct ||--o{ t : contract_type_id
+rt ||--o{ g : relationship_id
+cs_st ||--o{ c : course_status_id
+sh ||--o{ c : shift_id
+el ||--o{ c : level_id
+ay ||--o{ c : academic_year_id
+ay ||--o{ enr : academic_year_id
+es ||--o{ enr : enrollment_status_id
+st ||--o{ sub : subject_type_id
+et ||--o{ ev : evaluation_type_id
+evs ||--o{ ev : evaluation_status_id
+gs_st ||--o{ gr : grade_status_id
+
+note bottom of gr
+  subject_id eliminado (3FN):
+  nota → evaluation → subject
+end note
+
+note bottom of ev
+  course_id eliminado (3FN):
+  curso vía subject.course_id
+end note
+
+@enduml

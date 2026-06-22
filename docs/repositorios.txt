@@ -1,18 +1,18 @@
-REPOSITORIO PRINCIPAL
+MONOREPO LOCAL (carpeta raíz del proyecto)
+Todos los servicios y el frontend React viven en este repositorio.
+
+COMPONENTES
+- frontend-react/   → UI React (puerto 8094)
+- frontend/         → Módulo Spring Boot scaffold
+- apiGetaway/       → API Gateway (8090)
+- authService/      → Autenticación JWT (8091)
+- academicService/  → Gestión académica (8092)
+- attendanceService/→ Asistencia y anotaciones (8093)
+- infraestructura/  → DDL, diagramas, documentación, Postman
+
+REPOSITORIOS REMOTOS (referencia histórica multi-repo)
 https://github.com/cristianmonsalve14/libro-de-clases-digital
-
-FRONTEND
 https://github.com/cristianmonsalve14/frontend-react
-→ Aplicación React con gestión académica completa, autenticación JWT y consumo de microservicios
-
-ACADEMIC SERVICE
 https://github.com/cristianmonsalve14/academicService
-→ Microservicio encargado de estudiantes, cursos, asignaturas, matrículas y evaluaciones
-
-AUTH SERVICE
 https://github.com/cristianmonsalve14/authService
-→ Microservicio de autenticación y generación de tokens JWT
-
-INFRAESTRUCTURA / DOCUMENTACIÓN
-https://github.com/tuUsuario/infraestructura
-→ Documentación del proyecto (arquitectura, patrones, branching)
+https://github.com/cristianmonsalve14/infraestructura

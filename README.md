@@ -8,9 +8,12 @@ Plataforma de gestión académica desarrollada para el ramo **Fullstack III**, b
 
 El sistema está compuesto por:
 
-- ✅ Frontend React (UI)
-- ✅ Microservicio académico (gestión de datos)
-- ✅ Microservicio de autenticación (JWT)
+- ✅ **frontend-react** — UI React (puerto 8094)
+- ✅ **apiGetaway** — API Gateway (puerto 8090)
+- ✅ **authService** — autenticación y usuarios JWT (8091)
+- ✅ **academicService** — gestión académica (8092)
+- ✅ **attendanceService** — asistencia y anotaciones (8093)
+- ✅ **frontend** — módulo Spring Boot reservado (scaffold; la UI activa es `frontend-react`)
 
 Cada componente es independiente y se comunica mediante API REST.
 
@@ -20,7 +23,7 @@ Cada componente es independiente y se comunica mediante API REST.
 
 ### 🔧 Backend
 - Java 21
-- Spring Boot 4.0.5
+- Spring Boot 4.1.0
 - Spring Security + JWT
 - PostgreSQL
 - Maven
@@ -46,8 +49,9 @@ Cada componente es independiente y se comunica mediante API REST.
 ✅ Matrículas de estudiantes en cursos  
 ✅ Evaluaciones académicas  
 ✅ Registro de notas (escala chilena 1.0 - 7.0)  
+✅ Control de asistencia y anotaciones  
+✅ API Gateway centralizado  
 ✅ Autenticación segura mediante JWT  
-✅ Protección de rutas backend  
 
 ---
 
@@ -70,37 +74,51 @@ mvn spring-boot:run
 
 Puertos:
 
-- authService → http://localhost:8081  
-- academicService → http://localhost:8082  
+- apiGetaway → http://localhost:8090  
+- authService → http://localhost:8091  
+- academicService → http://localhost:8092  
+- attendanceService → http://localhost:8093  
+
+Ver detalle en `docs/puertos.md`.
 
 ---
 
-### 🟢 Frontend
+### 🟢 Frontend (UI activa)
 
-Ejecutar:
+Ejecutar en la carpeta **frontend-react**:
 
 npm install  
 npm run dev  
 
 Aplicación disponible en:
 
-http://localhost:5173  
+http://localhost:8094  
+
+Variable de entorno (`.env`):
+
+VITE_API_URL=http://localhost:8090
 
 ---
 
 ## 🗄️ Base de Datos
 
-1. Crear base de datos en PostgreSQL (ej: libro_clases_db)  
-2. Ejecutar scripts SQL del proyecto  
-3. Configurar credenciales en:
+Arquitectura **database per service** (una BD por microservicio):
 
-src/main/resources/application.properties
+| Base de datos | Servicio |
+|---|---|
+| `librodigital_auth` | authService |
+| `librodigital_academic` | academicService |
+| `librodigital_attendance` | attendanceService |
 
-Ejemplo:
+Scripts en `ddl/` — ver `ddl/README.md` para instalación paso a paso.
 
-spring.datasource.url=jdbc:postgresql://localhost:5432/libro_clases_db  
-spring.datasource.username=postgres  
-spring.datasource.password=tu_password  
+Configurar credenciales en cada `application.properties`:
+
+```properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/librodigital_auth
+spring.datasource.username=postgres
+spring.datasource.password=tu_password
+```
 
 ---
 
@@ -127,14 +145,14 @@ Authorization: Bearer {token}
 ## 🏗️ Estructura del Proyecto
 
 .
-├── frontend-react/  
-├── academicService/  
-│   ├── controller  
-│   ├── service  
-│   ├── repository  
-│   └── model  
-├── authService/  
-├── ddl/  
+├── frontend-react/     # UI React + Vite (puerto 8094)
+├── frontend/           # Módulo Spring Boot (scaffold)
+├── apiGetaway/
+├── authService/
+├── academicService/
+├── attendanceService/
+├── ddl/
+└── docs/
 
 ---
 
@@ -174,6 +192,12 @@ La documentación completa del sistema se encuentra en la carpeta `docs/` del re
 
 ### 📄 Contenido de la carpeta docs/
 
+- **puertos.md**  
+Mapa oficial de puertos del ecosistema (bloque 8090–8099).
+
+- **bases_de_datos.md**  
+Estrategia database per service, inventario de tablas y guía de configuración.
+
 - **repositorios.txt**  
 Contiene los enlaces a los repositorios del proyecto (frontend y microservicios).
 
@@ -181,21 +205,16 @@ Contiene los enlaces a los repositorios del proyecto (frontend y microservicios)
 Documento que describe los patrones de diseño aplicados en el sistema, como Repository, DTO, Service Layer y MVC, incluyendo su justificación y beneficios.
 
 - **arquitectura.md**  
-Documento técnico que incluye:
-Arquitectura de microservicios  
-Modelo de datos  
-Diagramas (PlantUML)  
-Definición de base de datos (DDL)  
-Estrategia de seguridad con JWT  
-Descripción de componentes del sistema  
+Arquitectura de microservicios, flujos, stack y diagramas.
+
+- **diagrams/README.md**  
+Índice de diagramas PlantUML vigentes y archivados.
 
 - **guia_proyecto.md**  
-Informe general del proyecto con:
-Descripción del problema  
-Objetivos  
-Metodología SCRUM  
-Plan de trabajo  
-Justificación técnica  
+Informe académico: problema, objetivos, metodología SCRUM y contexto del ramo.
+
+- **archive/**  
+Material histórico (SQL monolítico, diagramas antiguos, snapshots). No usar en desarrollo actual.
 
 ---
 

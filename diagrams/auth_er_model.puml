@@ -1,0 +1,47 @@
+@startuml auth_er_model
+title Diagrama Entidad-Relación - AuthService (librodigital_auth)
+
+skinparam linetype ortho
+skinparam entity {
+  BackgroundColor #F9F9F9
+  BorderColor #2D4159
+  ArrowColor #2D4159
+  FontSize 12
+}
+
+entity "users" as user {
+  *id : BIGINT <<PK>>
+  --
+  username : VARCHAR <<UNIQUE>>
+  password : VARCHAR
+  email : VARCHAR <<UNIQUE>>
+  enabled : BOOLEAN
+  created_at, updated_at
+}
+
+entity "role" as role {
+  *id : BIGINT <<PK>>
+  --
+  name : VARCHAR <<UNIQUE>>
+}
+
+entity "user_roles" as user_roles {
+  *user_id : BIGINT <<PK,FK>>
+  *role_id : BIGINT <<PK,FK>>
+}
+
+user ||--o{ user_roles : user_id
+role ||--o{ user_roles : role_id
+
+note top of user
+  Credenciales y perfil de acceso.
+  Referenciado lógicamente desde academic
+  (students.user_id, teachers.user_id, etc.)
+end note
+
+note top of role
+  ADMINISTRADOR, DOCENTE,
+  APODERADO, ESTUDIANTE
+end note
+
+@enduml

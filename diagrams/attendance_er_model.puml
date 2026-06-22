@@ -1,0 +1,75 @@
+@startuml attendance_er_model
+title Diagrama Entidad-Relación - AttendanceService (librodigital_attendance)
+
+skinparam linetype ortho
+skinparam entity {
+  BackgroundColor #F9F9F9
+  BorderColor #2D4159
+  FontSize 12
+}
+
+package "Catálogos" #EEF2F7 {
+  entity "session_statuses" as ss {
+    *id : SMALLINT <<PK>>
+    --
+    code, label
+  }
+  entity "attendance_statuses" as ast {
+    *id : SMALLINT <<PK>>
+    --
+    code, label
+  }
+  entity "annotation_types" as at {
+    *id : SMALLINT <<PK>>
+    --
+    code, label
+  }
+}
+
+package "Entidades" #FFFFFF {
+  entity "class_sessions" as cs {
+    *id : BIGINT <<PK>>
+    --
+    course_id : BIGINT <<lógico academic>>
+    subject_id : BIGINT <<lógico academic>>
+    teacher_id : BIGINT <<lógico academic>>
+    session_date, topic
+    session_status_id : SMALLINT <<FK>>
+  }
+
+  entity "attendance_records" as ar {
+    *id : BIGINT <<PK>>
+    --
+    session_id : BIGINT <<FK>>
+    student_id : BIGINT <<lógico academic>>
+    attendance_status_id : SMALLINT <<FK>>
+    observations
+    UK(session_id, student_id)
+  }
+
+  entity "annotations" as an {
+    *id : BIGINT <<PK>>
+    --
+    student_id : BIGINT <<lógico academic>>
+    teacher_id : BIGINT <<lógico academic>>
+    annotation_date, description
+    annotation_type_id : SMALLINT <<FK>>
+  }
+}
+
+ss ||--o{ cs : session_status_id
+cs ||--o{ ar : session_id
+ast ||--o{ ar : attendance_status_id
+at ||--o{ an : annotation_type_id
+
+note right of cs
+  Referencias a academicService
+  sin FK entre bases de datos
+end note
+
+note bottom of ar
+  Un registro por estudiante
+  y sesión de clase
+end note
+
+@enduml

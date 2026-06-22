@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GuardianServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.academicService.service.impl</a> &gt; <span class="el_source">GuardianServiceImpl.java</span></div><h1>GuardianServiceImpl.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.academicService.service.impl;
+
+
+
+import cl.duoc.libroDigital.academicService.exception.NotFoundException;
+
+import cl.duoc.libroDigital.academicService.model.Guardian;
+
+import cl.duoc.libroDigital.academicService.repository.GuardianRepository;
+
+import cl.duoc.libroDigital.academicService.service.GuardianService;
+
+import cl.duoc.libroDigital.academicService.validation.AcademicEntityValidator;
+
+import org.springframework.stereotype.Service;
+
+
+
+import java.util.List;
+
+import java.util.Optional;
+
+
+
+@Service
+
+public class GuardianServiceImpl implements GuardianService {
+
+    private final GuardianRepository guardianRepository;
+    private final AcademicEntityValidator validator;
+
+<span class="fc" id="L32">    public GuardianServiceImpl(GuardianRepository guardianRepository, AcademicEntityValidator validator) {</span>
+<span class="fc" id="L33">        this.guardianRepository = guardianRepository;</span>
+<span class="fc" id="L34">        this.validator = validator;</span>
+<span class="fc" id="L35">    }</span>
+
+    @Override
+
+    public Guardian createGuardian(Guardian guardian) {
+
+<span class="fc" id="L41">        validator.validateGuardianForSave(guardian, null);</span>
+
+<span class="fc" id="L43">        return guardianRepository.save(guardian);</span>
+
+    }
+
+
+
+    @Override
+
+    public List&lt;Guardian&gt; getAllGuardians() {
+
+<span class="nc" id="L53">        return guardianRepository.findAll();</span>
+
+    }
+
+
+
+    @Override
+
+    public Optional&lt;Guardian&gt; getGuardianById(Long id) {
+
+<span class="fc" id="L63">        return guardianRepository.findById(id);</span>
+
+    }
+
+
+
+    @Override
+
+    public Guardian updateGuardian(Long id, Guardian guardian) {
+
+<span class="fc" id="L73">        return guardianRepository.findById(id).map(updatedGuardian -&gt; {</span>
+
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">            if (guardian.getRut() != null) updatedGuardian.setRut(guardian.getRut());</span>
+
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">            if (guardian.getFirstName() != null) updatedGuardian.setFirstName(guardian.getFirstName());</span>
+
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">            if (guardian.getLastName() != null) updatedGuardian.setLastName(guardian.getLastName());</span>
+
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">            if (guardian.getSecondLastName() != null) updatedGuardian.setSecondLastName(guardian.getSecondLastName());</span>
+
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">            if (guardian.getEmail() != null) updatedGuardian.setEmail(guardian.getEmail());</span>
+
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">            if (guardian.getPhone() != null) updatedGuardian.setPhone(guardian.getPhone());</span>
+
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">            if (guardian.getEmergencyPhone() != null) updatedGuardian.setEmergencyPhone(guardian.getEmergencyPhone());</span>
+
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">            if (guardian.getAddress() != null) updatedGuardian.setAddress(guardian.getAddress());</span>
+
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">            if (guardian.getCommune() != null) updatedGuardian.setCommune(guardian.getCommune());</span>
+
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">            if (guardian.getCity() != null) updatedGuardian.setCity(guardian.getCity());</span>
+
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">            if (guardian.getRelationshipId() != null) updatedGuardian.setRelationshipId(guardian.getRelationshipId());</span>
+
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">            if (guardian.getOccupation() != null) updatedGuardian.setOccupation(guardian.getOccupation());</span>
+
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">            if (guardian.getWorkplace() != null) updatedGuardian.setWorkplace(guardian.getWorkplace());</span>
+
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">            if (guardian.getWorkPhone() != null) updatedGuardian.setWorkPhone(guardian.getWorkPhone());</span>
+
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">            if (guardian.getIsPrimary() != null) updatedGuardian.setIsPrimary(guardian.getIsPrimary());</span>
+
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">            if (guardian.getUserId() != null) updatedGuardian.setUserId(guardian.getUserId());</span>
+
+
+
+<span class="fc" id="L109">            validator.validateGuardianForSave(updatedGuardian, id);</span>
+
+<span class="fc" id="L111">            return guardianRepository.save(updatedGuardian);</span>
+
+<span class="fc" id="L113">        }).orElseThrow(() -&gt; new NotFoundException(&quot;Apoderado no encontrado con id &quot; + id));</span>
+
+    }
+
+
+
+    @Override
+
+    public void deleteGuardian(Long id) {
+
+<span class="fc" id="L123">        guardianRepository.deleteById(id);</span>
+
+<span class="fc" id="L125">    }</span>
+
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

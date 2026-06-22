@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CatalogLookupService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.academicService.service</a> &gt; <span class="el_source">CatalogLookupService.java</span></div><h1>CatalogLookupService.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.academicService.service;
+
+import jakarta.annotation.PostConstruct;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.springframework.stereotype.Service;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
+<span class="fc" id="L13">public class CatalogLookupService {</span>
+
+    @PersistenceContext
+    private EntityManager em;
+
+<span class="fc" id="L18">    private final Map&lt;String, Map&lt;String, Short&gt;&gt; codeToId = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L19">    private final Map&lt;String, Map&lt;Short, String&gt;&gt; idToCode = new HashMap&lt;&gt;();</span>
+
+    @PostConstruct
+    public void loadCatalogs() {
+<span class="fc" id="L23">        load(&quot;student_statuses&quot;, &quot;StudentStatus&quot;);</span>
+<span class="fc" id="L24">        load(&quot;teacher_statuses&quot;, &quot;TeacherStatus&quot;);</span>
+<span class="fc" id="L25">        load(&quot;course_statuses&quot;, &quot;CourseStatus&quot;);</span>
+<span class="fc" id="L26">        load(&quot;enrollment_statuses&quot;, &quot;EnrollmentStatus&quot;);</span>
+<span class="fc" id="L27">        load(&quot;evaluation_types&quot;, &quot;EvaluationType&quot;);</span>
+<span class="fc" id="L28">        load(&quot;evaluation_statuses&quot;, &quot;EvaluationStatus&quot;);</span>
+<span class="fc" id="L29">        load(&quot;grade_statuses&quot;, &quot;GradeStatus&quot;);</span>
+<span class="fc" id="L30">        load(&quot;relationship_types&quot;, &quot;RelationshipType&quot;);</span>
+<span class="fc" id="L31">        load(&quot;contract_types&quot;, &quot;ContractType&quot;);</span>
+<span class="fc" id="L32">        load(&quot;subject_types&quot;, &quot;SubjectType&quot;);</span>
+<span class="fc" id="L33">        load(&quot;shifts&quot;, &quot;Shift&quot;);</span>
+<span class="fc" id="L34">        load(&quot;education_levels&quot;, &quot;EducationLevel&quot;);</span>
+<span class="fc" id="L35">        load(&quot;academic_years&quot;, &quot;AcademicYear&quot;);</span>
+<span class="fc" id="L36">    }</span>
+
+    private void load(String table, String entity) {
+<span class="fc" id="L39">        List&lt;Object[]&gt; rows = em.createQuery(</span>
+<span class="fc" id="L40">                &quot;SELECT c.id, c.code FROM cl.duoc.libroDigital.academicService.model.catalog.&quot; + entity + &quot; c&quot;,</span>
+<span class="fc" id="L41">                Object[].class).getResultList();</span>
+<span class="fc" id="L42">        Map&lt;String, Short&gt; codes = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L43">        Map&lt;Short, String&gt; ids = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        for (Object[] row : rows) {</span>
+<span class="fc" id="L45">            Short id = (Short) row[0];</span>
+<span class="fc" id="L46">            String code = ((String) row[1]).toUpperCase();</span>
+<span class="fc" id="L47">            codes.put(code, id);</span>
+<span class="fc" id="L48">            ids.put(id, code);</span>
+        }
+<span class="fc" id="L50">        codeToId.put(table, codes);</span>
+<span class="fc" id="L51">        idToCode.put(table, ids);</span>
+<span class="fc" id="L52">    }</span>
+
+    public Short requireId(String table, String code) {
+<span class="pc bpc" id="L55" title="1 of 4 branches missed.">        if (code == null || code.isBlank()) {</span>
+<span class="fc" id="L56">            return defaultId(table);</span>
+        }
+<span class="fc" id="L58">        String normalized = code.trim().toUpperCase().replace('Ñ', 'N');</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        if (&quot;shifts&quot;.equals(table)) {</span>
+<span class="fc" id="L60">            Short shiftId = resolveShiftId(normalized);</span>
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">            if (shiftId != null) {</span>
+<span class="fc" id="L62">                return shiftId;</span>
+            }
+        }
+<span class="fc" id="L65">        return codeToId.getOrDefault(table, Map.of())</span>
+<span class="fc" id="L66">                .getOrDefault(normalized, defaultId(table));</span>
+    }
+
+    public String code(String table, Short id) {
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">        if (id == null) {</span>
+<span class="nc" id="L71">            return null;</span>
+        }
+<span class="fc" id="L73">        String stored = idToCode.getOrDefault(table, Map.of()).get(id);</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        if (&quot;shifts&quot;.equals(table)) {</span>
+<span class="fc" id="L75">            return normalizeShiftCode(stored);</span>
+        }
+<span class="nc" id="L77">        return stored;</span>
+    }
+
+    private Short resolveShiftId(String normalized) {
+<span class="fc" id="L81">        Map&lt;String, Short&gt; shifts = codeToId.getOrDefault(&quot;shifts&quot;, Map.of());</span>
+<span class="fc" id="L82">        Short id = shifts.get(normalized);</span>
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        if (id != null) {</span>
+<span class="nc" id="L84">            return id;</span>
+        }
+<span class="pc bpc" id="L86" title="3 of 4 branches missed.">        if (&quot;COMPLETA&quot;.equals(normalized) || &quot;JORNADA_COMPLETA&quot;.equals(normalized)) {</span>
+<span class="fc" id="L87">            return shifts.get(&quot;VESPERTINO&quot;);</span>
+        }
+<span class="nc" id="L89">        return null;</span>
+    }
+
+    private String normalizeShiftCode(String code) {
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">        if (code == null) {</span>
+<span class="nc" id="L94">            return null;</span>
+        }
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">        if (&quot;VESPERTINO&quot;.equals(code)) {</span>
+<span class="fc" id="L97">            return &quot;COMPLETA&quot;;</span>
+        }
+<span class="nc" id="L99">        return code;</span>
+    }
+
+    public String label(String table, Short id) {
+<span class="nc bnc" id="L103" title="All 2 branches missed.">        if (id == null) {</span>
+<span class="nc" id="L104">            return null;</span>
+        }
+<span class="nc" id="L106">        String entity = entityFor(table);</span>
+<span class="nc" id="L107">        return em.createQuery(</span>
+<span class="nc" id="L108">                        &quot;SELECT c.label FROM cl.duoc.libroDigital.academicService.model.catalog.&quot; + entity + &quot; c WHERE c.id = :id&quot;,</span>
+<span class="nc" id="L109">                        String.class)</span>
+<span class="nc" id="L110">                .setParameter(&quot;id&quot;, id)</span>
+<span class="nc" id="L111">                .getResultStream()</span>
+<span class="nc" id="L112">                .findFirst()</span>
+<span class="nc" id="L113">                .orElse(null);</span>
+    }
+
+    public String educationStage(Short levelId) {
+<span class="nc bnc" id="L117" title="All 2 branches missed.">        if (levelId == null) {</span>
+<span class="nc" id="L118">            return null;</span>
+        }
+<span class="nc" id="L120">        return em.createQuery(</span>
+<span class="nc" id="L121">                        &quot;SELECT c.stage FROM cl.duoc.libroDigital.academicService.model.catalog.EducationLevel c WHERE c.id = :id&quot;,</span>
+<span class="nc" id="L122">                        String.class)</span>
+<span class="nc" id="L123">                .setParameter(&quot;id&quot;, levelId)</span>
+<span class="nc" id="L124">                .getResultStream()</span>
+<span class="nc" id="L125">                .findFirst()</span>
+<span class="nc" id="L126">                .orElse(null);</span>
+    }
+
+    public Integer academicYearValue(Short academicYearId) {
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        if (academicYearId == null) {</span>
+<span class="nc" id="L131">            return null;</span>
+        }
+<span class="nc" id="L133">        return em.createQuery(</span>
+<span class="nc" id="L134">                        &quot;SELECT c.year FROM cl.duoc.libroDigital.academicService.model.catalog.AcademicYear c WHERE c.id = :id&quot;,</span>
+<span class="nc" id="L135">                        Integer.class)</span>
+<span class="nc" id="L136">                .setParameter(&quot;id&quot;, academicYearId)</span>
+<span class="nc" id="L137">                .getResultStream()</span>
+<span class="nc" id="L138">                .findFirst()</span>
+<span class="nc" id="L139">                .orElse(null);</span>
+    }
+
+    public java.time.LocalDate academicYearStartDate(Short academicYearId) {
+<span class="nc bnc" id="L143" title="All 2 branches missed.">        if (academicYearId == null) {</span>
+<span class="nc" id="L144">            return null;</span>
+        }
+<span class="nc" id="L146">        return em.createQuery(</span>
+<span class="nc" id="L147">                        &quot;SELECT c.startDate FROM cl.duoc.libroDigital.academicService.model.catalog.AcademicYear c WHERE c.id = :id&quot;,</span>
+<span class="nc" id="L148">                        java.time.LocalDate.class)</span>
+<span class="nc" id="L149">                .setParameter(&quot;id&quot;, academicYearId)</span>
+<span class="nc" id="L150">                .getResultStream()</span>
+<span class="nc" id="L151">                .findFirst()</span>
+<span class="nc" id="L152">                .orElse(null);</span>
+    }
+
+    public Short academicYearIdFromDate(java.time.LocalDate date) {
+<span class="pc bpc" id="L156" title="1 of 2 branches missed.">        if (date == null) {</span>
+<span class="nc" id="L157">            return defaultId(&quot;academic_years&quot;);</span>
+        }
+<span class="fc" id="L159">        return requireId(&quot;academic_years&quot;, String.valueOf(date.getYear()));</span>
+    }
+
+    public Short academicYearIdFromYear(Integer year) {
+<span class="nc bnc" id="L163" title="All 2 branches missed.">        if (year == null) {</span>
+<span class="nc" id="L164">            return defaultId(&quot;academic_years&quot;);</span>
+        }
+<span class="nc" id="L166">        return requireId(&quot;academic_years&quot;, String.valueOf(year));</span>
+    }
+
+    public Short educationLevelIdFromLabel(String label) {
+<span class="nc bnc" id="L170" title="All 4 branches missed.">        if (label == null || label.isBlank()) {</span>
+<span class="nc" id="L171">            return defaultId(&quot;education_levels&quot;);</span>
+        }
+<span class="nc" id="L173">        return codeToId.get(&quot;education_levels&quot;).entrySet().stream()</span>
+<span class="nc" id="L174">                .filter(e -&gt; label.equalsIgnoreCase(this.label(&quot;education_levels&quot;, e.getValue())))</span>
+<span class="nc" id="L175">                .map(Map.Entry::getValue)</span>
+<span class="nc" id="L176">                .findFirst()</span>
+<span class="nc" id="L177">                .orElse(defaultId(&quot;education_levels&quot;));</span>
+    }
+
+    private Short defaultId(String table) {
+<span class="pc bpc" id="L181" title="2 of 4 branches missed.">        return switch (table) {</span>
+            case &quot;teacher_statuses&quot;, &quot;course_statuses&quot;, &quot;enrollment_statuses&quot;,
+                 &quot;evaluation_types&quot;, &quot;evaluation_statuses&quot;, &quot;grade_statuses&quot;,
+<span class="fc" id="L184">                 &quot;relationship_types&quot;, &quot;student_statuses&quot; -&gt; (short) 1;</span>
+<span class="fc" id="L185">            case &quot;academic_years&quot; -&gt; (short) 2;</span>
+<span class="nc" id="L186">            case &quot;education_levels&quot; -&gt; (short) 9;</span>
+<span class="nc" id="L187">            default -&gt; null;</span>
+        };
+    }
+
+    private String entityFor(String table) {
+<span class="pc bpc" id="L192" title="13 of 14 branches missed.">        return switch (table) {</span>
+<span class="nc" id="L193">            case &quot;student_statuses&quot; -&gt; &quot;StudentStatus&quot;;</span>
+<span class="nc" id="L194">            case &quot;teacher_statuses&quot; -&gt; &quot;TeacherStatus&quot;;</span>
+<span class="nc" id="L195">            case &quot;course_statuses&quot; -&gt; &quot;CourseStatus&quot;;</span>
+<span class="nc" id="L196">            case &quot;enrollment_statuses&quot; -&gt; &quot;EnrollmentStatus&quot;;</span>
+<span class="nc" id="L197">            case &quot;evaluation_types&quot; -&gt; &quot;EvaluationType&quot;;</span>
+<span class="nc" id="L198">            case &quot;evaluation_statuses&quot; -&gt; &quot;EvaluationStatus&quot;;</span>
+<span class="nc" id="L199">            case &quot;grade_statuses&quot; -&gt; &quot;GradeStatus&quot;;</span>
+<span class="nc" id="L200">            case &quot;relationship_types&quot; -&gt; &quot;RelationshipType&quot;;</span>
+<span class="nc" id="L201">            case &quot;contract_types&quot; -&gt; &quot;ContractType&quot;;</span>
+<span class="nc" id="L202">            case &quot;subject_types&quot; -&gt; &quot;SubjectType&quot;;</span>
+<span class="nc" id="L203">            case &quot;shifts&quot; -&gt; &quot;Shift&quot;;</span>
+<span class="nc" id="L204">            case &quot;education_levels&quot; -&gt; &quot;EducationLevel&quot;;</span>
+<span class="nc" id="L205">            case &quot;academic_years&quot; -&gt; &quot;AcademicYear&quot;;</span>
+<span class="fc" id="L206">            default -&gt; throw new IllegalArgumentException(&quot;Catálogo desconocido: &quot; + table);</span>
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

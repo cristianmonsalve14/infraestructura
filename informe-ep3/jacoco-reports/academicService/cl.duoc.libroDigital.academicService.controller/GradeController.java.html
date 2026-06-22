@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GradeController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.academicService.controller</a> &gt; <span class="el_source">GradeController.java</span></div><h1>GradeController.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.academicService.controller;
+
+import cl.duoc.libroDigital.academicService.dto.GradeDTO;
+import cl.duoc.libroDigital.academicService.model.Evaluation;
+import cl.duoc.libroDigital.academicService.model.Grade;
+import cl.duoc.libroDigital.academicService.model.Student;
+import cl.duoc.libroDigital.academicService.model.Subject;
+import cl.duoc.libroDigital.academicService.model.Teacher;
+import cl.duoc.libroDigital.academicService.repository.EvaluationRepository;
+import cl.duoc.libroDigital.academicService.repository.StudentRepository;
+import cl.duoc.libroDigital.academicService.repository.SubjectRepository;
+import cl.duoc.libroDigital.academicService.repository.TeacherRepository;
+import cl.duoc.libroDigital.academicService.service.CatalogLookupService;
+import cl.duoc.libroDigital.academicService.service.GradeService;
+import cl.duoc.libroDigital.academicService.security.AcademicAccessService;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
+
+@RestController
+@RequestMapping(&quot;/grades&quot;)
+public class GradeController {
+
+    private final GradeService gradeService;
+    private final EvaluationRepository evaluationRepository;
+    private final StudentRepository studentRepository;
+    private final SubjectRepository subjectRepository;
+    private final TeacherRepository teacherRepository;
+    private final CatalogLookupService catalogs;
+    private final AcademicAccessService access;
+
+<span class="fc" id="L35">    public GradeController(</span>
+            GradeService gradeService,
+            EvaluationRepository evaluationRepository,
+            StudentRepository studentRepository,
+            SubjectRepository subjectRepository,
+            TeacherRepository teacherRepository,
+            CatalogLookupService catalogs,
+            AcademicAccessService access) {
+<span class="fc" id="L43">        this.gradeService = gradeService;</span>
+<span class="fc" id="L44">        this.evaluationRepository = evaluationRepository;</span>
+<span class="fc" id="L45">        this.studentRepository = studentRepository;</span>
+<span class="fc" id="L46">        this.subjectRepository = subjectRepository;</span>
+<span class="fc" id="L47">        this.teacherRepository = teacherRepository;</span>
+<span class="fc" id="L48">        this.catalogs = catalogs;</span>
+<span class="fc" id="L49">        this.access = access;</span>
+<span class="fc" id="L50">    }</span>
+
+    private GradeDTO toDTO(Grade grade) {
+<span class="fc" id="L53">        GradeDTO dto = new GradeDTO();</span>
+<span class="fc" id="L54">        dto.setId(grade.getId());</span>
+<span class="fc" id="L55">        dto.setStudentId(grade.getStudentId());</span>
+<span class="fc" id="L56">        dto.setEvaluationId(grade.getEvaluationId());</span>
+<span class="fc" id="L57">        evaluationRepository.findById(grade.getEvaluationId()).ifPresent(evaluation -&gt; {</span>
+<span class="fc" id="L58">            dto.setSubjectId(evaluation.getSubjectId());</span>
+<span class="fc" id="L59">            dto.setEvaluationName(evaluation.getName());</span>
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">            if (evaluation.getSubjectId() != null) {</span>
+<span class="fc" id="L61">                subjectRepository.findById(evaluation.getSubjectId())</span>
+<span class="fc" id="L62">                        .map(Subject::getSubjectName)</span>
+<span class="fc" id="L63">                        .ifPresent(dto::setSubjectName);</span>
+            }
+<span class="fc" id="L65">        });</span>
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">        if (grade.getStudentId() != null) {</span>
+<span class="fc" id="L67">            studentRepository.findById(grade.getStudentId())</span>
+<span class="fc" id="L68">                    .map(this::formatStudentName)</span>
+<span class="fc" id="L69">                    .ifPresent(dto::setStudentName);</span>
+        }
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        if (grade.getGradedByTeacherId() != null) {</span>
+<span class="fc" id="L72">            teacherRepository.findById(grade.getGradedByTeacherId())</span>
+<span class="fc" id="L73">                    .map(this::formatTeacherName)</span>
+<span class="fc" id="L74">                    .ifPresent(dto::setGradedByTeacherName);</span>
+        }
+<span class="fc" id="L76">        dto.setScore(grade.getScore());</span>
+<span class="fc" id="L77">        dto.setGradeDate(grade.getGradeDate());</span>
+<span class="fc" id="L78">        dto.setGradeStatus(catalogs.code(&quot;grade_statuses&quot;, grade.getGradeStatusId()));</span>
+<span class="fc" id="L79">        dto.setTeacherComments(grade.getTeacherComments());</span>
+<span class="fc" id="L80">        dto.setIsAbsent(grade.getIsAbsent());</span>
+<span class="fc" id="L81">        dto.setGradedByTeacherId(grade.getGradedByTeacherId());</span>
+<span class="fc" id="L82">        dto.setCreatedAt(grade.getCreatedAt());</span>
+<span class="fc" id="L83">        dto.setUpdatedAt(grade.getUpdatedAt());</span>
+<span class="fc" id="L84">        return dto;</span>
+    }
+
+    private String formatStudentName(Student student) {
+<span class="fc" id="L88">        StringBuilder name = new StringBuilder();</span>
+<span class="pc bpc" id="L89" title="2 of 4 branches missed.">        if (student.getFirstName() != null &amp;&amp; !student.getFirstName().isBlank()) {</span>
+<span class="fc" id="L90">            name.append(student.getFirstName().trim());</span>
+        }
+<span class="pc bpc" id="L92" title="2 of 4 branches missed.">        if (student.getLastName() != null &amp;&amp; !student.getLastName().isBlank()) {</span>
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">            if (name.length() &gt; 0) {</span>
+<span class="fc" id="L94">                name.append(' ');</span>
+            }
+<span class="fc" id="L96">            name.append(student.getLastName().trim());</span>
+        }
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">        return name.length() &gt; 0 ? name.toString() : &quot;Estudiante sin nombre&quot;;</span>
+    }
+
+    private String formatTeacherName(Teacher teacher) {
+<span class="fc" id="L102">        StringBuilder name = new StringBuilder();</span>
+<span class="pc bpc" id="L103" title="2 of 4 branches missed.">        if (teacher.getFirstName() != null &amp;&amp; !teacher.getFirstName().isBlank()) {</span>
+<span class="fc" id="L104">            name.append(teacher.getFirstName().trim());</span>
+        }
+<span class="pc bpc" id="L106" title="2 of 4 branches missed.">        if (teacher.getLastName() != null &amp;&amp; !teacher.getLastName().isBlank()) {</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">            if (name.length() &gt; 0) {</span>
+<span class="fc" id="L108">                name.append(' ');</span>
+            }
+<span class="fc" id="L110">            name.append(teacher.getLastName().trim());</span>
+        }
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">        return name.length() &gt; 0 ? name.toString() : &quot;Docente sin nombre&quot;;</span>
+    }
+
+    private Grade toEntity(GradeDTO dto) {
+<span class="fc" id="L116">        Grade grade = new Grade();</span>
+<span class="fc" id="L117">        grade.setId(dto.getId());</span>
+<span class="fc" id="L118">        grade.setStudentId(dto.getStudentId());</span>
+<span class="fc" id="L119">        grade.setEvaluationId(dto.getEvaluationId());</span>
+<span class="fc" id="L120">        grade.setScore(dto.getScore());</span>
+<span class="fc" id="L121">        grade.setGradeDate(dto.getGradeDate());</span>
+<span class="fc" id="L122">        grade.setGradeStatusId(catalogs.requireId(&quot;grade_statuses&quot;, dto.getGradeStatus()));</span>
+<span class="fc" id="L123">        grade.setTeacherComments(dto.getTeacherComments());</span>
+<span class="fc" id="L124">        grade.setIsAbsent(dto.getIsAbsent());</span>
+<span class="pc bpc" id="L125" title="1 of 2 branches missed.">        if (access.isTeacher()) {</span>
+<span class="fc" id="L126">            grade.setGradedByTeacherId(access.requireTeacherId());</span>
+<span class="fc" id="L127">        } else {</span>
+<span class="nc" id="L128">            grade.setGradedByTeacherId(dto.getGradedByTeacherId());</span>
+        }
+<span class="fc" id="L130">        return grade;</span>
+    }
+
+    @PostMapping
+    public ResponseEntity&lt;GradeDTO&gt; createGrade(@RequestBody GradeDTO dto) {
+<span class="fc" id="L135">        access.ensureCanManageGradeForEvaluation(dto.getEvaluationId());</span>
+<span class="fc" id="L136">        access.ensureCanReadStudent(dto.getStudentId());</span>
+<span class="fc" id="L137">        Grade created = gradeService.createGrade(toEntity(dto));</span>
+<span class="fc" id="L138">        return ResponseEntity.ok(toDTO(created));</span>
+    }
+
+    @GetMapping
+    public ResponseEntity&lt;List&lt;GradeDTO&gt;&gt; getAllGrades() {
+<span class="nc bnc" id="L143" title="All 2 branches missed.">        if (access.isAdmin()) {</span>
+<span class="nc" id="L144">            return ResponseEntity.ok(gradeService.getAllGrades().stream().map(this::toDTO).toList());</span>
+        }
+<span class="nc bnc" id="L146" title="All 2 branches missed.">        if (access.isStudent()) {</span>
+<span class="nc" id="L147">            Long studentId = access.requireStudentId();</span>
+<span class="nc" id="L148">            return ResponseEntity.ok(gradeService.getGradesByStudentId(studentId).stream().map(this::toDTO).toList());</span>
+        }
+<span class="nc bnc" id="L150" title="All 2 branches missed.">        if (access.isGuardian()) {</span>
+<span class="nc" id="L151">            Long guardianId = access.requireGuardianId();</span>
+<span class="nc" id="L152">            List&lt;GradeDTO&gt; grades = gradeService.getAllGrades().stream()</span>
+<span class="nc" id="L153">                    .filter(grade -&gt; access.guardianStudentIds(guardianId).contains(grade.getStudentId()))</span>
+<span class="nc" id="L154">                    .map(this::toDTO)</span>
+<span class="nc" id="L155">                    .toList();</span>
+<span class="nc" id="L156">            return ResponseEntity.ok(grades);</span>
+        }
+<span class="nc" id="L158">        Long teacherId = access.requireTeacherId();</span>
+<span class="nc" id="L159">        List&lt;Long&gt; subjectIds = access.teacherSubjectIds(teacherId);</span>
+<span class="nc" id="L160">        return ResponseEntity.ok(gradeService.getAllGrades().stream()</span>
+<span class="nc" id="L161">                .filter(grade -&gt; {</span>
+<span class="nc" id="L162">                    Optional&lt;Evaluation&gt; evaluation = evaluationRepository.findById(grade.getEvaluationId());</span>
+<span class="nc" id="L163">                    return evaluation.map(Evaluation::getSubjectId)</span>
+<span class="nc" id="L164">                            .map(subjectIds::contains)</span>
+<span class="nc" id="L165">                            .orElse(false);</span>
+                })
+<span class="nc" id="L167">                .map(this::toDTO)</span>
+<span class="nc" id="L168">                .toList());</span>
+    }
+
+    @GetMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;GradeDTO&gt; getGradeById(@PathVariable Long id) {
+<span class="fc" id="L173">        Optional&lt;Grade&gt; grade = gradeService.getGradeById(id);</span>
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">        if (grade.isEmpty()) {</span>
+<span class="fc" id="L175">            return ResponseEntity.notFound().build();</span>
+        }
+<span class="nc" id="L177">        access.ensureCanReadGrade(id);</span>
+<span class="nc" id="L178">        return ResponseEntity.ok(toDTO(grade.get()));</span>
+    }
+
+    @GetMapping(&quot;/student/{studentId}&quot;)
+    public ResponseEntity&lt;List&lt;GradeDTO&gt;&gt; getGradesByStudentId(@PathVariable Long studentId) {
+<span class="nc" id="L183">        access.ensureCanReadStudent(studentId);</span>
+<span class="nc" id="L184">        return ResponseEntity.ok(gradeService.getGradesByStudentId(studentId).stream().map(this::toDTO).toList());</span>
+    }
+
+    @GetMapping(&quot;/evaluation/{evaluationId}&quot;)
+    public ResponseEntity&lt;List&lt;GradeDTO&gt;&gt; getGradesByEvaluationId(@PathVariable Long evaluationId) {
+<span class="nc" id="L189">        access.ensureCanReadEvaluation(evaluationId);</span>
+<span class="nc" id="L190">        return ResponseEntity.ok(gradeService.getGradesByEvaluationId(evaluationId).stream().map(this::toDTO).toList());</span>
+    }
+
+    @GetMapping(&quot;/subject/{subjectId}&quot;)
+    public ResponseEntity&lt;List&lt;GradeDTO&gt;&gt; getGradesBySubjectId(@PathVariable Long subjectId) {
+<span class="nc" id="L195">        access.ensureCanReadSubject(subjectId);</span>
+<span class="nc" id="L196">        return ResponseEntity.ok(gradeService.getGradesBySubjectId(subjectId).stream().map(this::toDTO).toList());</span>
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;GradeDTO&gt; updateGrade(@PathVariable Long id, @RequestBody GradeDTO dto) {
+<span class="nc" id="L201">        access.ensureCanManageGrade(id);</span>
+<span class="nc" id="L202">        Grade updated = gradeService.updateGrade(id, toEntity(dto));</span>
+<span class="nc bnc" id="L203" title="All 2 branches missed.">        if (updated != null) {</span>
+<span class="nc" id="L204">            return ResponseEntity.ok(toDTO(updated));</span>
+        }
+<span class="nc" id="L206">        return ResponseEntity.notFound().build();</span>
+    }
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;Void&gt; deleteGrade(@PathVariable Long id) {
+<span class="nc" id="L211">        access.ensureCanManageGrade(id);</span>
+<span class="nc" id="L212">        gradeService.deleteGrade(id);</span>
+<span class="nc" id="L213">        return ResponseEntity.noContent().build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

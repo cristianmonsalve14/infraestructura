@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminUserController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">authService</a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.authService.controller</a> &gt; <span class="el_source">AdminUserController.java</span></div><h1>AdminUserController.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.authService.controller;
+
+import cl.duoc.libroDigital.authService.dto.CreateAdminUserRequest;
+import cl.duoc.libroDigital.authService.dto.UserResponse;
+import cl.duoc.libroDigital.authService.model.User;
+import cl.duoc.libroDigital.authService.model.Role;
+import cl.duoc.libroDigital.authService.repository.UserRepository;
+import cl.duoc.libroDigital.authService.repository.RoleRepository;
+import cl.duoc.libroDigital.authService.service.AdminUserService;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping(&quot;/admin/users&quot;)
+@PreAuthorize(&quot;hasRole('ADMINISTRADOR')&quot;)
+public class AdminUserController {
+
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final AdminUserService adminUserService;
+
+<span class="fc" id="L29">    public AdminUserController(</span>
+            UserRepository userRepository,
+            RoleRepository roleRepository,
+            AdminUserService adminUserService) {
+<span class="fc" id="L33">        this.userRepository = userRepository;</span>
+<span class="fc" id="L34">        this.roleRepository = roleRepository;</span>
+<span class="fc" id="L35">        this.adminUserService = adminUserService;</span>
+<span class="fc" id="L36">    }</span>
+
+    @PostMapping
+    public ResponseEntity&lt;UserResponse&gt; createUser(@RequestBody CreateAdminUserRequest request) {
+<span class="fc" id="L40">        User created = adminUserService.createUser(request);</span>
+<span class="fc" id="L41">        return ResponseEntity.ok(convertToResponse(created));</span>
+    }
+
+    // ✅ Obtener todos los usuarios (AHORA CON DTO)
+    @GetMapping
+    public List&lt;UserResponse&gt; getAllUsers() {
+<span class="fc" id="L47">        return userRepository.findAll()</span>
+<span class="fc" id="L48">                .stream()</span>
+<span class="fc" id="L49">                .map(this::convertToResponse)</span>
+<span class="fc" id="L50">                .toList();</span>
+    }
+
+    // ✅ Obtener usuario por ID (CON DTO)
+    @GetMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;UserResponse&gt; getUser(@PathVariable(&quot;id&quot;) Long id) {
+<span class="fc" id="L56">        return userRepository.findById(id)</span>
+<span class="fc" id="L57">                .map(this::convertToResponse)</span>
+<span class="fc" id="L58">                .map(ResponseEntity::ok)</span>
+<span class="fc" id="L59">                .orElse(ResponseEntity.notFound().build());</span>
+    }
+
+    // ✅ Eliminar usuario
+    @DeleteMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;Void&gt; deleteUser(@PathVariable(&quot;id&quot;) Long id) {
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        if (userRepository.existsById(id)) {</span>
+<span class="fc" id="L66">            userRepository.deleteById(id);</span>
+<span class="fc" id="L67">            return ResponseEntity.noContent().build();</span>
+        }
+<span class="fc" id="L69">        return ResponseEntity.notFound().build();</span>
+    }
+
+    // ✅ Actualizar roles (DEVUELVE DTO)
+    @PutMapping(&quot;/{id}/roles&quot;)
+    public ResponseEntity&lt;?&gt; updateUserRoles(
+            @PathVariable(&quot;id&quot;) Long id,
+            @RequestBody List&lt;String&gt; roles) {
+
+<span class="fc" id="L78">        Optional&lt;User&gt; userOpt = userRepository.findById(id);</span>
+
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">        if (userOpt.isEmpty()) {</span>
+<span class="nc" id="L81">            return ResponseEntity.notFound().build();</span>
+        }
+
+        // 🚫 Bloquear rol ADMIN
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        if (roles.stream().anyMatch(r -&gt; r.equalsIgnoreCase(&quot;ADMINISTRADOR&quot;))) {</span>
+<span class="fc" id="L86">            return ResponseEntity.badRequest()</span>
+<span class="fc" id="L87">                    .body(&quot;No se puede asignar el rol ADMINISTRADOR desde la aplicación.&quot;);</span>
+        }
+
+<span class="fc" id="L90">        Set&lt;Role&gt; roleEntities = roles.stream()</span>
+<span class="fc" id="L91">                .map(roleName -&gt; roleRepository.findByName(roleName).orElse(null))</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">                .filter(r -&gt; r != null)</span>
+<span class="fc" id="L93">                .collect(Collectors.toSet());</span>
+
+<span class="fc" id="L95">        User user = userOpt.get();</span>
+<span class="fc" id="L96">        user.setRoles(roleEntities);</span>
+
+<span class="fc" id="L98">        userRepository.save(user);</span>
+
+<span class="fc" id="L100">        return ResponseEntity.ok(convertToResponse(user)); // ✅ DTO</span>
+    }
+
+    // ✅ ✅ CONVERSOR ENTITY → DTO
+    private UserResponse convertToResponse(User user) {
+
+<span class="fc" id="L106">        UserResponse response = new UserResponse();</span>
+
+<span class="fc" id="L108">        response.setId(user.getId());</span>
+<span class="fc" id="L109">        response.setUsername(user.getUsername());</span>
+<span class="fc" id="L110">        response.setEmail(user.getEmail());</span>
+<span class="fc" id="L111">        response.setEnabled(user.isEnabled());</span>
+
+<span class="fc" id="L113">        response.setRoles(</span>
+<span class="fc" id="L114">                user.getRoles()</span>
+<span class="fc" id="L115">                        .stream()</span>
+<span class="fc" id="L116">                        .map(role -&gt; role.getName())</span>
+<span class="fc" id="L117">                        .collect(Collectors.toSet())</span>
+        );
+
+<span class="fc" id="L120">        return response;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

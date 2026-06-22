@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EnrollmentNumberService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.academicService.service</a> &gt; <span class="el_source">EnrollmentNumberService.java</span></div><h1>EnrollmentNumberService.java</h1><pre class="source lang-java linenums"><span class="fc" id="L1">package cl.duoc.libroDigital.academicService.service;</span>
+
+import cl.duoc.libroDigital.academicService.model.Enrollment;
+import cl.duoc.libroDigital.academicService.model.Student;
+import cl.duoc.libroDigital.academicService.repository.StudentRepository;
+
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+@Service
+public class EnrollmentNumberService {
+
+<span class="fc" id="L16">    private static final Pattern NUMBER_PATTERN = Pattern.compile(&quot;^(\\d{4})-(\\d+)$&quot;);</span>
+
+    private final StudentRepository studentRepository;
+    private final CatalogLookupService catalogs;
+
+<span class="fc" id="L21">    public EnrollmentNumberService(StudentRepository studentRepository, CatalogLookupService catalogs) {</span>
+<span class="fc" id="L22">        this.studentRepository = studentRepository;</span>
+<span class="fc" id="L23">        this.catalogs = catalogs;</span>
+<span class="fc" id="L24">    }</span>
+
+    public void assignIfNeeded(Enrollment enrollment) {
+<span class="fc bfc" id="L27" title="All 2 branches covered.">        if (enrollment.getStudentId() == null) {</span>
+<span class="fc" id="L28">            return;</span>
+        }
+
+<span class="fc" id="L31">        Student student = studentRepository.findById(enrollment.getStudentId()).orElse(null);</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">        if (student == null) {</span>
+<span class="fc" id="L33">            return;</span>
+        }
+
+<span class="fc" id="L36">        int year = resolveAcademicYear(enrollment);</span>
+<span class="fc" id="L37">        String yearPrefix = year + &quot;-&quot;;</span>
+<span class="fc" id="L38">        String current = student.getEnrollmentNumber();</span>
+
+<span class="pc bpc" id="L40" title="2 of 6 branches missed.">        if (current != null &amp;&amp; !current.isBlank() &amp;&amp; current.startsWith(yearPrefix)) {</span>
+<span class="fc" id="L41">            return;</span>
+        }
+
+<span class="fc" id="L44">        student.setEnrollmentNumber(generateNextForYear(year));</span>
+<span class="fc" id="L45">        studentRepository.save(student);</span>
+<span class="fc" id="L46">    }</span>
+
+    public int resolveAcademicYear(Enrollment enrollment) {
+<span class="fc" id="L49">        Integer academicYear = catalogs.academicYearValue(enrollment.getAcademicYearId());</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (academicYear != null) {</span>
+<span class="fc" id="L51">            return academicYear;</span>
+        }
+<span class="fc" id="L53">        LocalDate enrollmentDate = enrollment.getEnrollmentDate();</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (enrollmentDate != null) {</span>
+<span class="fc" id="L55">            return enrollmentDate.getYear();</span>
+        }
+<span class="fc" id="L57">        return LocalDate.now().getYear();</span>
+    }
+
+    public String generateNextForYear(int year) {
+<span class="fc" id="L61">        String prefix = year + &quot;-&quot;;</span>
+<span class="fc" id="L62">        int maxSequence = studentRepository.findAll().stream()</span>
+<span class="fc" id="L63">                .map(Student::getEnrollmentNumber)</span>
+<span class="fc" id="L64">                .map(this::parseSequence)</span>
+<span class="fc bfc" id="L65" title="All 4 branches covered.">                .filter(seq -&gt; seq != null &amp;&amp; seq.year() == year)</span>
+<span class="fc" id="L66">                .mapToInt(SequenceParts::sequence)</span>
+<span class="fc" id="L67">                .max()</span>
+<span class="fc" id="L68">                .orElse(0);</span>
+<span class="fc" id="L69">        return prefix + (maxSequence + 1);</span>
+    }
+
+    private SequenceParts parseSequence(String enrollmentNumber) {
+<span class="pc bpc" id="L73" title="1 of 4 branches missed.">        if (enrollmentNumber == null || enrollmentNumber.isBlank()) {</span>
+<span class="fc" id="L74">            return null;</span>
+        }
+<span class="fc" id="L76">        Matcher matcher = NUMBER_PATTERN.matcher(enrollmentNumber.trim());</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (!matcher.matches()) {</span>
+<span class="fc" id="L78">            return null;</span>
+        }
+<span class="fc" id="L80">        return new SequenceParts(</span>
+<span class="fc" id="L81">                Integer.parseInt(matcher.group(1)),</span>
+<span class="fc" id="L82">                Integer.parseInt(matcher.group(2)));</span>
+    }
+
+    private record SequenceParts(int year, int sequence) {}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

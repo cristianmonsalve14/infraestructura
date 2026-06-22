@@ -1,344 +1,165 @@
-# Arquitectura y Patrones — Plataforma Libro de Clases Digital
+# Arquitectura — Plataforma Libro de Clases Digital
 
-Fecha: 2026-03-22 (actualizado)
+Fecha: 2026-06-20
 
 ---
 
 ## Resumen
 
-Documento técnico que amplía la descripción del proyecto. Incluye la arquitectura del sistema, microservicios implementados, patrones de diseño y decisiones técnicas.
+Sistema de gestión académica basado en **microservicios** con frontend desacoplado. Cada servicio backend tiene su propia base PostgreSQL y se expone al exterior a través del **API Gateway** (`apiGetaway`, puerto 8090).
 
-Este documento incluye tanto la implementación actual como la proyección completa del sistema para futuras evaluaciones.
+Documentación relacionada:
 
----
-
-## Microservicios (lista y responsabilidades)
-
-### ✅ Implementados
-
-- auth-service: autenticación y gestión de usuarios (emite JWT).
-- academic-service: gestión académica (cursos, asignaturas, matrículas, evaluaciones).
-- frontend-react: interfaz de usuario.
-
-### 🚧 Planificados (fase final del proyecto)
-
-- attendance-service: sesiones, registro de asistencias y anotaciones de conducta.
-- API Gateway: punto de entrada centralizado (validación JWT, routing).
+- `docs/puertos.md` — mapa de puertos y rutas del gateway
+- `docs/bases_de_datos.md` — inventario de bases y migraciones
+- `docs/patrones.md` — patrones de diseño aplicados
+- `docs/branching.md` — estrategia de ramas
+- `docs/guia_proyecto.md` — contexto académico del ramo Fullstack III
 
 ---
 
-## 📌 Nota sobre implementación
+## Componentes
 
-La arquitectura descrita en este documento representa el diseño completo del sistema.
-
-En la implementación actual del proyecto se desarrollaron:
-
-- authService  
-- academicService  
-- frontend React  
-
-Los siguientes componentes están considerados para la evaluación final:
-
-- attendance-service  
-- API Gateway completo  
-- Circuit Breaker (Resilience4j)  
+| Componente | Carpeta | Puerto | Responsabilidad |
+|---|---|---|---|
+| API Gateway | `apiGetaway/` | 8090 | Enrutamiento centralizado hacia microservicios |
+| Auth | `authService/` | 8091 | Usuarios, roles, JWT |
+| Academic | `academicService/` | 8092 | Estudiantes, cursos, matrículas, evaluaciones, notas |
+| Attendance | `attendanceService/` | 8093 | Sesiones, asistencia, anotaciones |
+| UI React | `frontend-react/` | 8094 | Interfaz web (consume solo el gateway) |
+| Spring scaffold | `frontend/` | — | Módulo reservado; la UI activa es `frontend-react` |
 
 ---
 
-## Decisiones principales
+## Flujo de comunicación
 
-- Lenguaje: Java 21
-- Frontend: React + TypeScript
-- Persistencia: PostgreSQL
-- Comunicación: REST HTTP/JSON
-- Identificadores: BIGINT auto incremental
-- Seguridad: JWT
+```
+frontend-react (:8094)
+        │
+        ▼  VITE_API_URL → http://localhost:8090
+   apiGetaway (:8090)
+        │
+        ├── /auth/**        → authService (:8091)
+        ├── /students/**    → academicService (:8092)
+        ├── /courses/**     → academicService (:8092)
+        ├── /teachers/**    → academicService (:8092)
+        ├── /subjects/**    → academicService (:8092)
+        ├── /enrollments/** → academicService (:8092)
+        ├── /evaluations/** → academicService (:8092)
+        ├── /grades/**      → academicService (:8092)
+        ├── /guardians/**   → academicService (:8092)
+        ├── /sessions/**    → attendanceService (:8093)
+        ├── /attendances/** → attendanceService (:8093)
+        └── /annotations/** → attendanceService (:8093)
+```
+
+El frontend **no** llama directamente a los microservicios en desarrollo; siempre usa el gateway.
+
+---
+
+## Stack tecnológico
+
+| Capa | Tecnologías |
+|---|---|
+| Backend | Java 21, Spring Boot 4.1.0, Spring Security, JWT, JPA, Maven |
+| Gateway | Spring Cloud Gateway 2025.1.2 |
+| Frontend | React, TypeScript, Vite, Tailwind CSS |
+| Base de datos | PostgreSQL (una BD por microservicio) |
+| Comunicación | REST HTTP/JSON |
 
 ---
 
 ## Persistencia
 
-- Base de datos relacional PostgreSQL  
-- Uso de JPA para persistencia  
-- Relaciones entre entidades académicas  
+Estrategia **database per service**:
+
+| Base de datos | Servicio |
+|---|---|
+| `librodigital_auth` | authService |
+| `librodigital_academic` | academicService |
+| `librodigital_attendance` | attendanceService |
+
+No hay foreign keys entre bases distintas; las relaciones cruzadas usan IDs lógicos o APIs REST.
+
+Scripts: `ddl/` — ver `ddl/README.md`.
 
 ---
 
-## Patrones de Diseño Aplicados
+## Seguridad (JWT)
 
-### ✅ Repository Pattern
+1. El usuario inicia sesión en `POST /auth/login`.
+2. `authService` valida credenciales y emite `accessToken` (+ `refreshToken`).
+3. El frontend guarda el token y lo envía en cada petición:
 
-- Uso de Spring Data JPA  
-- Abstracción de acceso a datos  
-- Mejora mantenibilidad  
+```
+Authorization: Bearer {accessToken}
+```
 
----
+4. Cada microservicio valida el JWT en sus rutas protegidas.
+5. El registro público (`POST /auth/register`) está **deshabilitado**; el administrador crea usuarios desde la app o vía `POST /admin/users`.
 
-### ✅ DTO Pattern
-
-- Separación entre entidad y datos expuestos  
-- Mayor control sobre la API  
-- Seguridad de datos  
-
----
-
-### ✅ Service Layer Pattern
-
-- Lógica de negocio centralizada  
-- Separación de responsabilidades  
+Usuarios demo: ver `docs/bases_de_datos.md`.
 
 ---
 
-### ✅ MVC
+## Patrones de diseño
 
-- Model → entidades  
-- View → frontend React  
-- Controller → API REST  
+Implementados en el código:
 
----
+- **Repository** — Spring Data JPA
+- **DTO** — separación entidad / API
+- **Service Layer** — lógica de negocio fuera de controllers
+- **MVC** — entidades + REST + frontend React
 
-## ⚠️ Patrones considerados (no implementados)
+Detalle y ejemplos: `docs/patrones.md`.
 
-### Factory Method
+### Proyección (no implementado aún)
 
-Diseñado para centralizar creación de objetos.
-
-Estado: no implementado en esta fase.
-
----
-
-### Circuit Breaker
-
-Diseñado para evitar fallos entre servicios.
-
-Estado: no implementado.
-
----
-
-## Seguridad
-
-Sistema basado en JWT.
-
-Flujo:
-
-1. Usuario inicia sesión  
-2. authService genera token  
-3. frontend guarda token  
-4. se envía en cada request  
-
-Formato:
-
-Authorization: Bearer {token}
-
----
-
-## Modelo de Datos (Resumen)
-
-- Student  
-- Teacher  
-- Course  
-- Subject  
-- Enrollment  
-- Evaluation  
-
----
-
-## Estructura del sistema
-
-Sistema Libro Digital
-
-├── frontend-react  
-├── academicService  
-└── authService  
-
----
-
-## Comunicación
-
-- REST API  
-- JSON  
-- llamadas directas frontend → backend  
+- Factory Method
+- Circuit Breaker (Resilience4j)
+- Microservicio de mensajería
 
 ---
 
 ## Diagramas
 
-Ubicación:
+Ubicación: `diagrams/`
 
-diagrams/
+| Archivo | Contenido |
+|---|---|
+| `architecture_patterns_simple.puml` | Microservicios y patrones |
+| `security_authentication.puml` | Flujo de login |
+| `security_authorization.puml` | Autorización por roles |
+| `auth_er_model.puml` | ER base `librodigital_auth` |
+| `academic_er_model.puml` | ER base `librodigital_academic` |
+| `attendance_er_model.puml` | ER base `librodigital_attendance` |
 
-Incluye:
-
-- arquitectura  
-- modelo ER  
-
----
-
-## Estado del Proyecto
-
-✔ backend funcional  
-✔ frontend funcional  
-✔ CRUD completo  
-✔ autenticación JWT  
-✔ integración funcionando  
+Los tres diagramas ER están en `infraestructura/diagrams/`.
 
 ---
 
-## Proyección
+## Orden de arranque
 
-- implementar attendance-service  
-- agregar API Gateway  
-- agregar Circuit Breaker  
-- escalar arquitectura  
-
----
-
-## Conclusión
-
-El sistema implementa una arquitectura modular basada en microservicios.
-
-Permite:
-
-- escalabilidad  
-- mantenibilidad  
-- organización del código  
-
-Se encuentra listo para extenderse en futuras etapas del proyecto.
+1. PostgreSQL
+2. authService (8091)
+3. academicService (8092)
+4. attendanceService (8093)
+5. apiGetaway (8090)
+6. frontend-react (8094)
 
 ---
 
-## 1. Antecedentes Personales
+## Estado actual
 
-Integrantes:
-
-- Cristian Monsalve  
-- Héctor Olivares  
-
-Roles:
-
-- Backend / Fullstack  
-- Frontend / Fullstack  
+- Microservicios auth, academic, attendance y gateway operativos
+- Frontend React con paneles por rol (admin, docente, apoderado, estudiante)
+- JWT en todos los servicios
+- Pruebas unitarias con JUnit 5 + Mockito y reportes JaCoCo
+- Colección Postman en `postman/`
 
 ---
 
-## 2. Descripción del Proyecto
+## Autores
 
-Sistema de gestión académica basado en microservicios.
-
-Permite:
-
-- gestión de estudiantes  
-- cursos  
-- asignaturas  
-- matrículas  
-- evaluaciones  
-
----
-
-## Problema
-
-Uso de libros físicos → mala gestión de información
-
----
-
-## Solución
-
-Sistema web moderno con backend + frontend + JWT
-
----
-
-## Objetivos
-
-- implementar autenticación  
-- desarrollar CRUD académico  
-- aplicar patrones  
-- construir sistema completo  
-
----
-
-## 3. Contexto
-
-Usuarios:
-
-- administrador  
-- docente  
-- estudiante  
-
----
-
-## 4. Metodología
-
-SCRUM dividido en etapas:
-
-- diseño  
-- desarrollo  
-- pruebas  
-
----
-
-## 5. Tecnologías
-
-Backend:
-- Spring Boot  
-- Java 21  
-- JPA  
-
-Frontend:
-- React  
-- TypeScript  
-- Tailwind  
-
----
-
-## Repositorio
-
-GitHub:
-
-- frontend  
-- backend  
-- microservicios  
-
----
-
-## Conclusión Final
-
-El proyecto cumple con los objetivos del curso y se encuentra preparado para futuras mejoras.
-
-Incluye:
-
-- frontend moderno  
-- backend funcional  
-- autenticación JWT  
-- arquitectura modular  
-
-``
-## 🧠 Backend For Frontend (BFF)
-
-El proyecto implementa un Backend For Frontend (BFF) como una capa intermedia entre el frontend y los microservicios.
-
-Este componente se encarga de:
-
-- Centralizar las solicitudes del frontend
-- Gestionar la comunicación con los microservicios
-- Facilitar la integración con la arquitectura backend
-- Preparar y adaptar las respuestas para el frontend
-
-### 📌 Estructura
-
-El BFF se encuentra organizado en una carpeta independiente dentro del proyecto.
-
-### 🔧 Relación con el sistema
-
-El flujo de comunicación es:
-
-Frontend React  
-→ Backend For Frontend (BFF)  
-→ Microservicios (authService, academicService)
-
-### ✅ Beneficios
-
-- Reduce el acoplamiento entre frontend y backend  
-- Centraliza la lógica de integración  
-- Facilita futuras mejoras (API Gateway, seguridad avanzada)  
-
----
+- Cristian Monsalve — backend / fullstack
+- Héctor Olivares — frontend / fullstack

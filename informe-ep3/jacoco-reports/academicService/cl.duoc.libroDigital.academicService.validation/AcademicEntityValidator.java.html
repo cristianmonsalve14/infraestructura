@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="es"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AcademicEntityValidator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report"></a> &gt; <a href="index.source.html" class="el_package">cl.duoc.libroDigital.academicService.validation</a> &gt; <span class="el_source">AcademicEntityValidator.java</span></div><h1>AcademicEntityValidator.java</h1><pre class="source lang-java linenums">package cl.duoc.libroDigital.academicService.validation;
+
+import cl.duoc.libroDigital.academicService.exception.BadRequestException;
+import cl.duoc.libroDigital.academicService.exception.ConflictException;
+import cl.duoc.libroDigital.academicService.exception.NotFoundException;
+import cl.duoc.libroDigital.academicService.model.Course;
+import cl.duoc.libroDigital.academicService.model.Enrollment;
+import cl.duoc.libroDigital.academicService.model.Evaluation;
+import cl.duoc.libroDigital.academicService.model.Grade;
+import cl.duoc.libroDigital.academicService.model.Guardian;
+import cl.duoc.libroDigital.academicService.model.Student;
+import cl.duoc.libroDigital.academicService.model.Subject;
+import cl.duoc.libroDigital.academicService.model.Teacher;
+import cl.duoc.libroDigital.academicService.repository.CourseRepository;
+import cl.duoc.libroDigital.academicService.repository.EnrollmentRepository;
+import cl.duoc.libroDigital.academicService.repository.EvaluationRepository;
+import cl.duoc.libroDigital.academicService.repository.GradeRepository;
+import cl.duoc.libroDigital.academicService.repository.GuardianRepository;
+import cl.duoc.libroDigital.academicService.repository.StudentRepository;
+import cl.duoc.libroDigital.academicService.repository.SubjectRepository;
+import cl.duoc.libroDigital.academicService.repository.TeacherRepository;
+import cl.duoc.libroDigital.academicService.service.CatalogLookupService;
+import cl.duoc.libroDigital.academicService.util.EmailUtil;
+import cl.duoc.libroDigital.academicService.util.PhoneUtil;
+import cl.duoc.libroDigital.academicService.util.RutUtil;
+import cl.duoc.libroDigital.academicService.util.TextUtil;
+
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+@Component
+public class AcademicEntityValidator {
+
+    private final StudentRepository studentRepository;
+    private final GuardianRepository guardianRepository;
+    private final TeacherRepository teacherRepository;
+    private final CourseRepository courseRepository;
+    private final SubjectRepository subjectRepository;
+    private final EnrollmentRepository enrollmentRepository;
+    private final EvaluationRepository evaluationRepository;
+    private final GradeRepository gradeRepository;
+    private final CatalogLookupService catalogs;
+
+<span class="fc" id="L48">    public AcademicEntityValidator(</span>
+            StudentRepository studentRepository,
+            GuardianRepository guardianRepository,
+            TeacherRepository teacherRepository,
+            CourseRepository courseRepository,
+            SubjectRepository subjectRepository,
+            EnrollmentRepository enrollmentRepository,
+            EvaluationRepository evaluationRepository,
+            GradeRepository gradeRepository,
+            CatalogLookupService catalogs) {
+<span class="fc" id="L58">        this.studentRepository = studentRepository;</span>
+<span class="fc" id="L59">        this.guardianRepository = guardianRepository;</span>
+<span class="fc" id="L60">        this.teacherRepository = teacherRepository;</span>
+<span class="fc" id="L61">        this.courseRepository = courseRepository;</span>
+<span class="fc" id="L62">        this.subjectRepository = subjectRepository;</span>
+<span class="fc" id="L63">        this.enrollmentRepository = enrollmentRepository;</span>
+<span class="fc" id="L64">        this.evaluationRepository = evaluationRepository;</span>
+<span class="fc" id="L65">        this.gradeRepository = gradeRepository;</span>
+<span class="fc" id="L66">        this.catalogs = catalogs;</span>
+<span class="fc" id="L67">    }</span>
+
+    public void validateStudentForSave(Student student, Long excludeId) {
+<span class="fc" id="L70">        student.setRut(RutUtil.normalizeAndValidate(student.getRut()));</span>
+<span class="fc" id="L71">        student.setFirstName(TextUtil.requireNonBlank(student.getFirstName(), &quot;El nombre&quot;));</span>
+<span class="fc" id="L72">        student.setLastName(TextUtil.requireNonBlank(student.getLastName(), &quot;El apellido paterno&quot;));</span>
+<span class="fc" id="L73">        student.setMotherLastName(TextUtil.requireNonBlank(student.getMotherLastName(), &quot;El apellido materno&quot;));</span>
+<span class="fc" id="L74">        student.setEmail(EmailUtil.normalizeAndValidate(student.getEmail()));</span>
+<span class="fc" id="L75">        student.setPhone(PhoneUtil.normalizeAndValidateOptional(student.getPhone()));</span>
+
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (student.getDateOfBirth() != null) {</span>
+<span class="fc" id="L78">            validatePastDate(student.getDateOfBirth(), &quot;La fecha de nacimiento&quot;);</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">            if (student.getDateOfBirth().isBefore(LocalDate.now().minusYears(30))) {</span>
+<span class="nc" id="L80">                throw new BadRequestException(&quot;La fecha de nacimiento no parece válida para un estudiante&quot;);</span>
+            }
+        }
+
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        if (student.getGuardianId() != null</span>
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">                &amp;&amp; !guardianRepository.existsById(student.getGuardianId())) {</span>
+<span class="nc" id="L86">            throw new BadRequestException(&quot;El apoderado seleccionado no existe&quot;);</span>
+        }
+
+<span class="fc" id="L89">        ensureUniqueRut(studentRepository.findByRut(student.getRut()), excludeId, &quot;Ya existe un estudiante con ese RUT&quot;);</span>
+<span class="fc" id="L90">        ensureUniqueEmail(studentRepository.findByEmail(student.getEmail()), excludeId, &quot;Ya existe un estudiante con ese email&quot;);</span>
+<span class="fc" id="L91">    }</span>
+
+    public void validateGuardianForSave(Guardian guardian, Long excludeId) {
+<span class="fc" id="L94">        guardian.setRut(RutUtil.normalizeAndValidate(guardian.getRut()));</span>
+<span class="fc" id="L95">        guardian.setFirstName(TextUtil.requireNonBlank(guardian.getFirstName(), &quot;El nombre&quot;));</span>
+<span class="fc" id="L96">        guardian.setLastName(TextUtil.requireNonBlank(guardian.getLastName(), &quot;El apellido paterno&quot;));</span>
+<span class="fc" id="L97">        guardian.setEmail(EmailUtil.normalizeAndValidate(guardian.getEmail()));</span>
+<span class="fc" id="L98">        guardian.setPhone(PhoneUtil.normalizeAndValidateRequired(guardian.getPhone()));</span>
+<span class="fc" id="L99">        guardian.setEmergencyPhone(PhoneUtil.normalizeAndValidateOptional(guardian.getEmergencyPhone()));</span>
+
+<span class="fc" id="L101">        ensureUniqueRut(guardianRepository.findByRut(guardian.getRut()), excludeId, &quot;Ya existe un apoderado con ese RUT&quot;);</span>
+<span class="fc" id="L102">        ensureUniqueEmail(guardianRepository.findByEmail(guardian.getEmail()), excludeId, &quot;Ya existe un apoderado con ese email&quot;);</span>
+<span class="fc" id="L103">    }</span>
+
+    public void validateTeacherForSave(Teacher teacher, Long excludeId) {
+<span class="fc" id="L106">        teacher.setRut(RutUtil.normalizeAndValidate(teacher.getRut()));</span>
+<span class="fc" id="L107">        teacher.setFirstName(TextUtil.requireNonBlank(teacher.getFirstName(), &quot;El nombre&quot;));</span>
+<span class="fc" id="L108">        teacher.setLastName(TextUtil.requireNonBlank(teacher.getLastName(), &quot;El apellido paterno&quot;));</span>
+<span class="fc" id="L109">        teacher.setEmail(EmailUtil.normalizeAndValidate(teacher.getEmail()));</span>
+<span class="fc" id="L110">        teacher.setPhone(PhoneUtil.normalizeAndValidateOptional(teacher.getPhone()));</span>
+
+<span class="fc" id="L112">        ensureUniqueRut(teacherRepository.findByRut(teacher.getRut()), excludeId, &quot;Ya existe un profesor con ese RUT&quot;);</span>
+<span class="fc" id="L113">        ensureUniqueEmail(teacherRepository.findByEmail(teacher.getEmail()), excludeId, &quot;Ya existe un profesor con ese email&quot;);</span>
+<span class="fc" id="L114">    }</span>
+
+    public void validateCourseForSave(Course course) {
+<span class="fc" id="L117">        TextUtil.requireNonBlank(course.getName(), &quot;El grado del curso&quot;);</span>
+<span class="pc bpc" id="L118" title="5 of 6 branches missed.">        if (course.getLevelId() == null &amp;&amp; (course.getName() == null || course.getName().isBlank())) {</span>
+<span class="nc" id="L119">            TextUtil.requireNonBlank(course.getName(), &quot;El nombre del curso&quot;);</span>
+        }
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">        if (course.getAcademicYearId() == null) {</span>
+<span class="fc" id="L122">            throw new BadRequestException(&quot;El año académico es obligatorio&quot;);</span>
+        }
+<span class="nc bnc" id="L124" title="All 4 branches missed.">        if (course.getMaxCapacity() != null &amp;&amp; course.getMaxCapacity() &lt; 1) {</span>
+<span class="nc" id="L125">            throw new BadRequestException(&quot;La capacidad máxima debe ser al menos 1&quot;);</span>
+        }
+<span class="nc bnc" id="L127" title="All 2 branches missed.">        if (course.getHeadTeacherId() != null</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">                &amp;&amp; !teacherRepository.existsById(course.getHeadTeacherId())) {</span>
+<span class="nc" id="L129">            throw new BadRequestException(&quot;El profesor jefe seleccionado no existe&quot;);</span>
+        }
+<span class="nc" id="L131">    }</span>
+
+    public void validateEnrollmentForSave(Enrollment enrollment, Long excludeId) {
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">        if (enrollment.getStudentId() == null) {</span>
+<span class="nc" id="L135">            throw new BadRequestException(&quot;El estudiante es obligatorio&quot;);</span>
+        }
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">        if (enrollment.getCourseId() == null) {</span>
+<span class="nc" id="L138">            throw new BadRequestException(&quot;El curso es obligatorio&quot;);</span>
+        }
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">        if (!studentRepository.existsById(enrollment.getStudentId())) {</span>
+<span class="nc" id="L141">            throw new BadRequestException(&quot;El estudiante seleccionado no existe&quot;);</span>
+        }
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">        if (!courseRepository.existsById(enrollment.getCourseId())) {</span>
+<span class="nc" id="L144">            throw new BadRequestException(&quot;El curso seleccionado no existe&quot;);</span>
+        }
+<span class="pc bpc" id="L146" title="1 of 2 branches missed.">        if (enrollment.getEnrollmentStatusId() == null) {</span>
+<span class="fc" id="L147">            enrollment.setEnrollmentStatusId(catalogs.requireId(&quot;enrollment_statuses&quot;, &quot;ACTIVO&quot;));</span>
+        }
+
+<span class="fc" id="L150">        Short activeStatusId = catalogs.requireId(&quot;enrollment_statuses&quot;, &quot;ACTIVO&quot;);</span>
+<span class="pc bpc" id="L151" title="1 of 2 branches missed.">        if (activeStatusId.equals(enrollment.getEnrollmentStatusId())) {</span>
+<span class="fc" id="L152">            boolean duplicate = enrollmentRepository</span>
+<span class="fc" id="L153">                    .findByStudentIdAndCourseIdAndEnrollmentStatusId(</span>
+<span class="fc" id="L154">                            enrollment.getStudentId(),</span>
+<span class="fc" id="L155">                            enrollment.getCourseId(),</span>
+<span class="fc" id="L156">                            activeStatusId)</span>
+<span class="fc" id="L157">                    .stream()</span>
+<span class="pc bnc" id="L158" title="All 4 branches missed.">                    .anyMatch(existing -&gt; excludeId == null || !existing.getId().equals(excludeId));</span>
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">            if (duplicate) {</span>
+<span class="nc" id="L160">                throw new ConflictException(&quot;El estudiante ya tiene una matrícula activa en ese curso&quot;);</span>
+            }
+        }
+
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">        if (enrollment.getEnrollmentDate() != null) {</span>
+<span class="fc" id="L165">            validateNotFutureDate(enrollment.getEnrollmentDate(), &quot;La fecha de matrícula&quot;);</span>
+        }
+<span class="fc" id="L167">    }</span>
+
+    public void validateSubjectForSave(Subject subject, Long excludeId) {
+<span class="fc" id="L170">        subject.setSubjectCode(TextUtil.requireNonBlank(subject.getSubjectCode(), &quot;El código de la asignatura&quot;));</span>
+<span class="fc" id="L171">        subject.setSubjectName(TextUtil.requireNonBlank(subject.getSubjectName(), &quot;El nombre de la asignatura&quot;));</span>
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">        if (&quot;TEMP&quot;.equalsIgnoreCase(subject.getSubjectName())) {</span>
+<span class="fc" id="L173">            throw new BadRequestException(&quot;El nombre de la asignatura no puede ser TEMP&quot;);</span>
+        }
+<span class="nc bnc" id="L175" title="All 2 branches missed.">        if (subject.getCourseId() == null) {</span>
+<span class="nc" id="L176">            throw new BadRequestException(&quot;El curso es obligatorio para la asignatura&quot;);</span>
+        }
+<span class="nc bnc" id="L178" title="All 2 branches missed.">        if (!courseRepository.existsById(subject.getCourseId())) {</span>
+<span class="nc" id="L179">            throw new BadRequestException(&quot;El curso seleccionado no existe&quot;);</span>
+        }
+<span class="nc bnc" id="L181" title="All 4 branches missed.">        if (subject.getTeacherId() != null &amp;&amp; !teacherRepository.existsById(subject.getTeacherId())) {</span>
+<span class="nc" id="L182">            throw new BadRequestException(&quot;El profesor seleccionado no existe&quot;);</span>
+        }
+<span class="nc bnc" id="L184" title="All 2 branches missed.">        if (subject.getWeeklyHours() != null) {</span>
+<span class="nc" id="L185">            int hours = subject.getWeeklyHours();</span>
+<span class="nc bnc" id="L186" title="All 4 branches missed.">            if (hours &lt; 1 || hours &gt; 12) {</span>
+<span class="nc" id="L187">                throw new BadRequestException(&quot;Las horas semanales deben estar entre 1 y 12&quot;);</span>
+            }
+        }
+
+<span class="nc" id="L191">        subjectRepository.findBySubjectCode(subject.getSubjectCode()).ifPresent(existing -&gt; {</span>
+<span class="nc bnc" id="L192" title="All 4 branches missed.">            if (excludeId == null || !existing.getId().equals(excludeId)) {</span>
+<span class="nc" id="L193">                throw new ConflictException(&quot;Ya existe una asignatura con ese código&quot;);</span>
+            }
+<span class="nc" id="L195">        });</span>
+<span class="nc" id="L196">    }</span>
+
+    public void validateEvaluationForSave(Evaluation evaluation, Long excludeId) {
+<span class="fc" id="L199">        evaluation.setName(TextUtil.requireNonBlank(evaluation.getName(), &quot;El nombre de la evaluación&quot;));</span>
+<span class="pc bpc" id="L200" title="1 of 2 branches missed.">        if (evaluation.getSubjectId() == null) {</span>
+<span class="nc" id="L201">            throw new BadRequestException(&quot;La asignatura es obligatoria&quot;);</span>
+        }
+<span class="pc bpc" id="L203" title="1 of 2 branches missed.">        if (evaluation.getDate() == null) {</span>
+<span class="nc" id="L204">            throw new BadRequestException(&quot;La fecha de la evaluación es obligatoria&quot;);</span>
+        }
+<span class="pc bpc" id="L206" title="1 of 2 branches missed.">        if (evaluation.getEvaluationTypeId() == null) {</span>
+<span class="nc" id="L207">            throw new BadRequestException(&quot;El tipo de evaluación es obligatorio&quot;);</span>
+        }
+
+<span class="fc" id="L210">        subjectRepository.findById(evaluation.getSubjectId())</span>
+<span class="pc" id="L211">                .orElseThrow(() -&gt; new BadRequestException(&quot;La asignatura seleccionada no existe&quot;));</span>
+
+<span class="pc bpc" id="L213" title="1 of 2 branches missed.">        if (evaluation.getWeight() != null) {</span>
+<span class="fc" id="L214">            double weight = evaluation.getWeight().doubleValue();</span>
+<span class="pc bpc" id="L215" title="2 of 4 branches missed.">            if (weight &lt; 0 || weight &gt; 100) {</span>
+<span class="nc" id="L216">                throw new BadRequestException(&quot;La ponderación debe estar entre 0 y 100&quot;);</span>
+            }
+        }
+<span class="pc bpc" id="L219" title="2 of 4 branches missed.">        if (evaluation.getMaxScore() != null &amp;&amp; evaluation.getMaxScore().doubleValue() &lt;= 0) {</span>
+<span class="nc" id="L220">            throw new BadRequestException(&quot;La nota máxima debe ser mayor a 0&quot;);</span>
+        }
+<span class="fc" id="L222">    }</span>
+
+    public void validateGradeForSave(Grade grade, Long excludeId) {
+<span class="pc bpc" id="L225" title="1 of 2 branches missed.">        if (grade.getStudentId() == null) {</span>
+<span class="nc" id="L226">            throw new BadRequestException(&quot;El estudiante es obligatorio&quot;);</span>
+        }
+<span class="pc bpc" id="L228" title="1 of 2 branches missed.">        if (grade.getEvaluationId() == null) {</span>
+<span class="nc" id="L229">            throw new BadRequestException(&quot;La evaluación es obligatoria&quot;);</span>
+        }
+<span class="pc bpc" id="L231" title="1 of 2 branches missed.">        if (!studentRepository.existsById(grade.getStudentId())) {</span>
+<span class="nc" id="L232">            throw new BadRequestException(&quot;El estudiante seleccionado no existe&quot;);</span>
+        }
+
+<span class="fc" id="L235">        Evaluation evaluation = evaluationRepository.findById(grade.getEvaluationId())</span>
+<span class="pc" id="L236">                .orElseThrow(() -&gt; new BadRequestException(&quot;La evaluación seleccionada no existe&quot;));</span>
+
+<span class="fc" id="L238">        Subject subject = subjectRepository.findById(evaluation.getSubjectId())</span>
+<span class="pc" id="L239">                .orElseThrow(() -&gt; new BadRequestException(&quot;La asignatura de la evaluación no existe&quot;));</span>
+
+<span class="pc bpc" id="L241" title="1 of 2 branches missed.">        if (grade.getGradeDate() == null) {</span>
+<span class="fc" id="L242">            grade.setGradeDate(LocalDate.now());</span>
+        }
+
+<span class="fc" id="L245">        boolean absent = Boolean.TRUE.equals(grade.getIsAbsent());</span>
+<span class="fc bfc" id="L246" title="All 2 branches covered.">        if (absent) {</span>
+<span class="fc" id="L247">            grade.setGradeStatusId(catalogs.requireId(&quot;grade_statuses&quot;, &quot;AUSENTE&quot;));</span>
+<span class="pc bpc" id="L248" title="1 of 2 branches missed.">            if (grade.getScore() == null) {</span>
+<span class="fc" id="L249">                grade.setScore(BigDecimal.ONE);</span>
+            }
+<span class="fc" id="L251">        } else {</span>
+<span class="pc bpc" id="L252" title="1 of 2 branches missed.">            if (grade.getScore() == null) {</span>
+<span class="nc" id="L253">                throw new BadRequestException(&quot;La nota es obligatoria&quot;);</span>
+            }
+<span class="fc" id="L255">            double score = grade.getScore().doubleValue();</span>
+<span class="pc bpc" id="L256" title="2 of 4 branches missed.">            if (score &lt; 1.0 || score &gt; 7.0) {</span>
+<span class="nc" id="L257">                throw new BadRequestException(&quot;La nota debe estar entre 1.0 y 7.0&quot;);</span>
+            }
+<span class="pc bpc" id="L259" title="1 of 2 branches missed.">            if (grade.getGradeStatusId() == null) {</span>
+<span class="fc" id="L260">                grade.setGradeStatusId(catalogs.requireId(&quot;grade_statuses&quot;, &quot;DEFINITIVA&quot;));</span>
+            }
+        }
+
+<span class="pc bpc" id="L264" title="1 of 2 branches missed.">        if (subject.getCourseId() != null) {</span>
+<span class="fc" id="L265">            Short activeStatusId = catalogs.requireId(&quot;enrollment_statuses&quot;, &quot;ACTIVO&quot;);</span>
+<span class="fc" id="L266">            boolean enrolled = enrollmentRepository</span>
+<span class="fc" id="L267">                    .findByStudentIdAndCourseIdAndEnrollmentStatusId(</span>
+<span class="fc" id="L268">                            grade.getStudentId(), subject.getCourseId(), activeStatusId)</span>
+<span class="fc" id="L269">                    .stream()</span>
+<span class="fc" id="L270">                    .findAny()</span>
+<span class="fc" id="L271">                    .isPresent();</span>
+<span class="pc bpc" id="L272" title="1 of 2 branches missed.">            if (!enrolled) {</span>
+<span class="nc" id="L273">                throw new BadRequestException(&quot;El estudiante no está matriculado en el curso de esta evaluación&quot;);</span>
+            }
+        }
+
+<span class="fc" id="L277">        List&lt;Grade&gt; existingGrades = gradeRepository.findByStudentId(grade.getStudentId());</span>
+<span class="pc bpc" id="L278" title="1 of 2 branches missed.">        for (Grade existing : existingGrades) {</span>
+<span class="nc bnc" id="L279" title="All 2 branches missed.">            if (existing.getEvaluationId().equals(grade.getEvaluationId())</span>
+<span class="nc bnc" id="L280" title="All 4 branches missed.">                    &amp;&amp; (excludeId == null || !existing.getId().equals(excludeId))) {</span>
+<span class="nc" id="L281">                throw new ConflictException(&quot;Ya existe una nota para este estudiante en esta evaluación&quot;);</span>
+            }
+        }
+<span class="fc" id="L284">    }</span>
+
+    public void requireFound(Optional&lt;?&gt; entity, String message) {
+<span class="pc bpc" id="L287" title="1 of 2 branches missed.">        if (entity.isEmpty()) {</span>
+<span class="fc" id="L288">            throw new NotFoundException(message);</span>
+        }
+<span class="nc" id="L290">    }</span>
+
+    private void validatePastDate(LocalDate date, String label) {
+<span class="pc bpc" id="L293" title="1 of 2 branches missed.">        if (date.isAfter(LocalDate.now())) {</span>
+<span class="nc" id="L294">            throw new BadRequestException(label + &quot; no puede ser futura&quot;);</span>
+        }
+<span class="fc" id="L296">    }</span>
+
+    private void validateNotFutureDate(LocalDate date, String label) {
+<span class="pc bpc" id="L299" title="1 of 2 branches missed.">        if (date.isAfter(LocalDate.now())) {</span>
+<span class="nc" id="L300">            throw new BadRequestException(label + &quot; no puede ser futura&quot;);</span>
+        }
+<span class="fc" id="L302">    }</span>
+
+    private &lt;T&gt; void ensureUniqueRut(Optional&lt;T&gt; existing, Long excludeId, String message) {
+<span class="fc" id="L305">        existing.ifPresent(entity -&gt; {</span>
+<span class="fc" id="L306">            Long id = extractId(entity);</span>
+<span class="pc bpc" id="L307" title="3 of 4 branches missed.">            if (excludeId == null || !excludeId.equals(id)) {</span>
+<span class="fc" id="L308">                throw new ConflictException(message);</span>
+            }
+<span class="nc" id="L310">        });</span>
+<span class="fc" id="L311">    }</span>
+
+    private &lt;T&gt; void ensureUniqueEmail(Optional&lt;T&gt; existing, Long excludeId, String message) {
+<span class="fc" id="L314">        ensureUniqueRut(existing, excludeId, message);</span>
+<span class="fc" id="L315">    }</span>
+
+    private Long extractId(Object entity) {
+<span class="pc bpc" id="L318" title="1 of 2 branches missed.">        if (entity instanceof Student student) return student.getId();</span>
+<span class="nc bnc" id="L319" title="All 2 branches missed.">        if (entity instanceof Guardian guardian) return guardian.getId();</span>
+<span class="nc bnc" id="L320" title="All 2 branches missed.">        if (entity instanceof Teacher teacher) return teacher.getId();</span>
+<span class="nc" id="L321">        throw new IllegalStateException(&quot;Tipo no soportado para validación de duplicados&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
