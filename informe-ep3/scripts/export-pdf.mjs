@@ -9,7 +9,6 @@ const informeDir = resolve(__dirname, "..");
 
 const files = [
   "examen_transversal.md",
-  "06_guia_defensa_examen.md",
 ];
 
 const browserCandidates = [

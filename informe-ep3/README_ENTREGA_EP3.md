@@ -17,29 +17,26 @@
 | # | Documento | Contenido | Archivo |
 |---|-----------|-----------|---------|
 | **★** | **Informe único del examen** | Arquitectura + BD + pruebas + repos + innovación | **`examen_transversal.md` / `.pdf`** |
-| — | Guía de defensa (aparte) | App en vivo, código, BD, pruebas | `06_guia_defensa_examen.md` / `.pdf` |
 | — | Fuentes parciales EP3 | Docs individuales (referencia) | `01`–`05` |
 | — | Diagrama arquitectura | PNG | `diagramas/architecture_patterns_simple.png` |
 | — | Postman | API REST | `../postman/Libro_Digital.postman_collection.json` |
 | — | Cobertura JaCoCo / Vitest | HTML | `jacoco-reports/`, `coverage-frontend/` |
 
-### Qué entregar al profesor (simplificado)
+### Qué entregar al profesor
 
 1. **`examen_transversal.pdf`** (informe completo en un solo archivo)
 2. Enlaces GitHub (están dentro del transversal, Parte IV)
 3. ZIP con código + `infraestructura` (opcional según pauta)
-4. `06_guia_defensa_examen.pdf` **solo para el equipo** (no es el informe formal)
 
 ---
 
 ## Qué cambió para el examen (resumen)
 
 1. Se **mantiene** el informe EP3 (docs 01–04) como base evaluada.
-2. Se **agrega** el documento **05** con:
+2. Se **agrega** el documento **05** / integrado en `examen_transversal` con:
    - Mejoras realizadas tras la presentación N°3
    - **Innovación:** avisos inmediatos a apoderados al guardar asistencia y al crear evaluaciones
-3. Se **agrega** el documento **06** para agilizar la defensa (software corriendo + código + BD + pruebas), según recomendación docente.
-4. Se **actualizan** roles demo, mensajería, gateway y flujos en los docs 01–04.
+3. Se **actualizan** roles demo, mensajería, gateway y flujos en los docs 01–04.
 
 Contraseña demo: `test1234` — usuarios: `admin_colegio`, `admin_oficina`, `prof_castillo`, `apoderado_demo`, `estudiante_demo`.
 
@@ -49,14 +46,10 @@ Contraseña demo: `test1234` — usuarios: `admin_colegio`, `admin_oficina`, `pr
 
 ```
 LibroDigital_EXAMEN/
-├── informe-ep3/                    ← esta carpeta (documentación EP3 + examen)
+├── informe-ep3/
 │   ├── README_ENTREGA_EP3.md
-│   ├── 01_arquitectura_microservicios.md|.pdf
-│   ├── 02_persistencia_datos.md|.pdf
-│   ├── 03_informe_pruebas_unitarias.md|.pdf
-│   ├── 04_repositorios_github.txt
-│   ├── 05_mejoras_e_innovacion_examen.md|.pdf
-│   ├── 06_guia_defensa_examen.md|.pdf
+│   ├── examen_transversal.md|.pdf   ← entrega principal
+│   ├── 01…05… (fuentes parciales / respaldo)
 │   ├── diagramas/
 │   ├── jacoco-reports/
 │   └── coverage-frontend/
@@ -65,7 +58,7 @@ LibroDigital_EXAMEN/
 ├── academicService/
 ├── attendanceService/
 ├── apiGetaway/
-└── infraestructura/                ← DDL, Postman, diagramas ER
+└── infraestructura/
 ```
 
 Excluir: `node_modules/`, `*/target/`, `*/.git/`, `frontend/` (legacy).
@@ -80,7 +73,7 @@ npm install
 node export-pdf.mjs
 ```
 
-Requisito: Chrome o Microsoft Edge.
+Requisito: Chrome o Microsoft Edge. Genera `examen_transversal.pdf`.
 
 ---
 
@@ -102,9 +95,8 @@ Detalle en `04_repositorios_github.txt`.
 ## Defensa oral
 
 - Traer **PC propio con el stack levantado** (recomendación docente).
-- Guion: `06_guia_defensa_examen.md`
-- Núcleo demo: **alertas a apoderados** (`05_mejoras_e_innovacion_examen.md`)
-- Preguntas sobre arquitectura, persistencia, pruebas y contribución individual (como en EP3)
+- Núcleo demo: **alertas a apoderados** (Parte V de `examen_transversal` / doc `05`).
+- Preguntas sobre arquitectura, persistencia, pruebas y contribución individual.
 
 ---
 
@@ -113,6 +105,6 @@ Detalle en `04_repositorios_github.txt`.
 - [ ] Backends: `mvn test` en auth / academic / attendance / gateway
 - [ ] Frontend: `npm test` en `frontend-react`
 - [ ] Demo innovación: lista + evaluación → mensajes en `apoderado_demo`
-- [ ] PDF regenerados (`01`–`03`, `05`, `06`)
+- [ ] PDF `examen_transversal.pdf` al día
 - [ ] Repos GitHub al día
-- [ ] ZIP subido / material listo para defensa
+- [ ] ZIP subido / material listo

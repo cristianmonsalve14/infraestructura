@@ -19,15 +19,13 @@ Este documento **complementa** el informe EP3 (arquitectura, persistencia y prue
 
 > Traer el software **corriendo en un PC propio** o agilizar la presentación del **software, código, BD y pruebas**.
 
-Ver guía operativa: `06_guia_defensa_examen.md`.
-
 ---
 
 ## 2. Feedback EP3 → acciones realizadas
 
 | Feedback / recomendación | Respuesta del equipo | Evidencia en el software |
 |--------------------------|----------------------|---------------------------|
-| Agilizar demo: app, código, BD y tests visibles | Checklist de arranque, usuarios demo y ruta de demo grabada | `06_guia_defensa_examen.md`, `README.md` raíz |
+| Agilizar demo: app, código, BD y tests visibles | Checklist de arranque, usuarios demo y ruta de demo | `README.md` raíz + stack levantado |
 | Mejorar en base a presentación N°3 (claridad de roles y flujos reales) | Separación **Dirección** vs **Oficina**; panel docente por curso; confirmaciones en acciones sensibles | RBAC frontend + banners de ayuda |
 | Incorporar **mejora innovadora** (alertas a apoderados) | Avisos automáticos al **guardar lista** y al **crear evaluación** | Mensajería TG + endpoints de notify |
 | Fortalecer valor pedagógico / comunicación familia–colegio | Módulo de mensajes + alertas contextuales (alumno, asignatura, fecha, estado) | Conversaciones TG docente–apoderado |
@@ -204,7 +202,7 @@ Las suites EP3 (JUnit/Mockito/JaCoCo + Vitest) siguen siendo la base. Tras las m
 
 - Se mantienen tests de acceso/seguridad (`AttendanceAccessServiceTest`, etc.).
 - El flujo de notify está diseñado para **no romper** el CRUD si la mensajería falla (adecuado para demo y para tests de servicio).
-- Checklist de defensa incluye ejecutar `mvn test` en un servicio y `npm test` en frontend (ver `06`).
+- Checklist de defensa incluye ejecutar `mvn test` en un servicio y `npm test` en frontend.
 
 > Nota: los reportes HTML JaCoCo/Vitest de `informe-ep3/jacoco-reports` y `coverage-frontend` corresponden a la corrida EP3. Para el examen se recomienda regenerar al menos un reporte fresco en vivo o actualizar copias si el tiempo lo permite.
 
