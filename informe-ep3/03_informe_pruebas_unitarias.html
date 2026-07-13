@@ -27,7 +27,10 @@
 </style>
 </head>
 <body><h1>03 — Informe de Pruebas Unitarias</h1>
-<p><strong>Proyecto:</strong> Plataforma Libro de Clases Digital<br><strong>Asignatura:</strong> DSY1106 — Desarrollo Fullstack III<br><strong>Evaluación:</strong> Parcial N°3 — Encargo<br><strong>Equipo:</strong> Cristian Monsalve / Héctor Olivares<br><strong>Fecha de ejecución:</strong> 2026-06-20  </p>
+<p><strong>Proyecto:</strong> Plataforma Libro de Clases Digital<br><strong>Asignatura:</strong> DSY1106 — Desarrollo Fullstack III<br><strong>Evaluación:</strong> Parcial N°3 — Encargo (base) · Revisado para Examen 2026-07-13<br><strong>Equipo:</strong> Cristian Monsalve / Héctor Olivares<br><strong>Fecha de ejecución (EP3):</strong> 2026-06-20  </p>
+<blockquote>
+<p><strong>Examen:</strong> las métricas de la tabla siguiente corresponden a la corrida EP3. En defensa se recomienda ejecutar al menos un <code>mvn test</code> / <code>npm test</code> en vivo (ver <code>06_guia_defensa_examen.md</code>). La innovación de alertas se valida preferentemente con <strong>demo funcional</strong> (docente → apoderado).</p>
+</blockquote>
 <hr>
 <h2>1. Resumen ejecutivo</h2>
 <p>Se implementaron <strong>pruebas unitarias y de capa web</strong> en los cuatro módulos backend Java, utilizando <strong>JUnit 5</strong>, <strong>Mockito</strong> y <strong>Spring Boot Test</strong>. La cobertura de código se mide con <strong>JaCoCo 0.8.12</strong>, integrado en el ciclo <code>mvn test</code> de cada microservicio.</p>
@@ -628,5 +631,7 @@ client.ts         ████████████████████�
 </ul>
 <h3>Conclusión</h3>
 <p>Las pruebas unitarias garantizan la calidad de los componentes críticos (autenticación JWT, CRUD académico, registro de asistencia, permisos y validaciones del frontend) y proporcionan <strong>métricas objetivas de cobertura</strong> mediante JaCoCo y Vitest, cumpliendo los requisitos del informe de la Evaluación Parcial N°3.</p>
+<h3>Nota para el examen (post-EP3)</h3>
+<p>Además de las suites anteriores, el valor evaluado en el examen incluye la <strong>mejora innovadora de alertas a apoderados</strong>. Su verificación principal es el <strong>flujo E2E manual / demo</strong> (guardar lista o crear evaluación → mensaje visible para <code>apoderado_demo</code>). El diseño <em>best-effort</em> del notify facilita que los tests de CRUD de asistencia/evaluaciones no dependan de la mensajería. Guía de defensa: <code>06_guia_defensa_examen.md</code>. Detalle funcional: <code>05_mejoras_e_innovacion_examen.md</code>.</p>
 </body>
 </html>

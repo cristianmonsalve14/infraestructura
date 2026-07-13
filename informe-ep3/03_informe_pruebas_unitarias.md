@@ -2,10 +2,11 @@
 
 **Proyecto:** Plataforma Libro de Clases Digital  
 **Asignatura:** DSY1106 — Desarrollo Fullstack III  
-**Evaluación:** Parcial N°3 — Encargo  
+**Evaluación:** Parcial N°3 — Encargo (base) · Revisado para Examen 2026-07-13  
 **Equipo:** Cristian Monsalve / Héctor Olivares  
-**Fecha de ejecución:** 2026-06-20  
+**Fecha de ejecución (EP3):** 2026-06-20  
 
+> **Examen:** las métricas de la tabla siguiente corresponden a la corrida EP3. En defensa se recomienda ejecutar al menos un `mvn test` / `npm test` en vivo (ver `06_guia_defensa_examen.md`). La innovación de alertas se valida preferentemente con **demo funcional** (docente → apoderado).
 ---
 
 ## 1. Resumen ejecutivo
@@ -396,3 +397,7 @@ Ver guía: `infraestructura/postman/README.md`
 ### Conclusión
 
 Las pruebas unitarias garantizan la calidad de los componentes críticos (autenticación JWT, CRUD académico, registro de asistencia, permisos y validaciones del frontend) y proporcionan **métricas objetivas de cobertura** mediante JaCoCo y Vitest, cumpliendo los requisitos del informe de la Evaluación Parcial N°3.
+
+### Nota para el examen (post-EP3)
+
+Además de las suites anteriores, el valor evaluado en el examen incluye la **mejora innovadora de alertas a apoderados**. Su verificación principal es el **flujo E2E manual / demo** (guardar lista o crear evaluación → mensaje visible para `apoderado_demo`). El diseño *best-effort* del notify facilita que los tests de CRUD de asistencia/evaluaciones no dependan de la mensajería. Guía de defensa: `06_guia_defensa_examen.md`. Detalle funcional: `05_mejoras_e_innovacion_examen.md`.

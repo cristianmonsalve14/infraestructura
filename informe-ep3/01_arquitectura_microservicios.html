@@ -27,11 +27,14 @@
 </style>
 </head>
 <body><h1>01 — Arquitectura de Microservicios</h1>
-<p><strong>Proyecto:</strong> Plataforma Libro de Clases Digital<br><strong>Asignatura:</strong> DSY1106 — Desarrollo Fullstack III<br><strong>Evaluación:</strong> Parcial N°3 — Encargo<br><strong>Equipo:</strong> Cristian Monsalve / Héctor Olivares  </p>
+<p><strong>Proyecto:</strong> Plataforma Libro de Clases Digital<br><strong>Asignatura:</strong> DSY1106 — Desarrollo Fullstack III<br><strong>Evaluación:</strong> Parcial N°3 — Encargo (base) · Actualizado para Examen 2026-07-13<br><strong>Equipo:</strong> Cristian Monsalve / Héctor Olivares  </p>
+<blockquote>
+<p><strong>Examen:</strong> mejoras e innovación (alertas a apoderados) en <code>05_mejoras_e_innovacion_examen.md</code>.</p>
+</blockquote>
 <hr>
 <h2>1. Resumen ejecutivo</h2>
-<p>El sistema implementa una <strong>arquitectura de microservicios</strong> para la gestión académica de un colegio: autenticación centralizada, dominio académico (estudiantes, cursos, notas) y dominio de asistencia (sesiones, registros, anotaciones). Todos los servicios backend se exponen al exterior a través de un <strong>API Gateway</strong>, y el <strong>frontend React</strong> consume únicamente ese punto de entrada.</p>
-<p>La comunicación entre capas es <strong>REST sobre HTTP/JSON</strong>. Cada microservicio persiste en su <strong>propia base PostgreSQL</strong> (patrón <em>Database per Service</em>), sin claves foráneas entre bases distintas.</p>
+<p>El sistema implementa una <strong>arquitectura de microservicios</strong> para la gestión académica de un colegio: autenticación centralizada, dominio académico (estudiantes, cursos, notas, <strong>mensajería</strong>), dominio de asistencia (sesiones, registros, anotaciones) y un <strong>frontend por roles</strong>. Todos los servicios backend se exponen al exterior a través de un <strong>API Gateway</strong>, y el <strong>frontend React</strong> consume únicamente ese punto de entrada.</p>
+<p>La comunicación entre capas es <strong>REST sobre HTTP/JSON</strong>. Cada microservicio persiste en su <strong>propia base PostgreSQL</strong> (patrón <em>Database per Service</em>), sin claves foráneas entre bases distintas. Entre microservicios, cuando hace falta orquestación ligera (ej. avisar al apoderado al guardar asistencia), se usa <strong>llamada REST</strong> (<code>attendanceService</code> → <code>academicService</code>).</p>
 <hr>
 <h2>2. Diagrama de arquitectura</h2>
 <p><img src="diagramas/architecture_patterns_simple.png" alt="Diagrama de arquitectura y patrones"></p>
@@ -70,19 +73,19 @@
 <td>Academic Service</td>
 <td><code>academicService/</code></td>
 <td>8092</td>
-<td>Estudiantes, docentes, cursos, matrículas, evaluaciones, notas</td>
+<td>Estudiantes, docentes, cursos, matrículas, evaluaciones, notas, <strong>mensajes / alertas</strong></td>
 </tr>
 <tr>
 <td>Attendance Service</td>
 <td><code>attendanceService/</code></td>
 <td>8093</td>
-<td>Sesiones de clase, asistencia, anotaciones</td>
+<td>Sesiones de clase, asistencia, anotaciones (+ notify a academic)</td>
 </tr>
 <tr>
 <td>Frontend React</td>
 <td><code>frontend-react/</code></td>
 <td>8094</td>
-<td>UI por rol (admin, docente, apoderado, estudiante)</td>
+<td>UI por rol (Dirección, Oficina, docente, apoderado, estudiante)</td>
 </tr>
 </tbody></table>
 <hr>
@@ -143,6 +146,11 @@
 <td>academicService</td>
 </tr>
 <tr>
+<td><code>/messages/**</code></td>
+<td><code>http://localhost:8092</code></td>
+<td>academicService (mensajería + notify)</td>
+</tr>
+<tr>
 <td><code>/sessions/**</code>, <code>/attendances/**</code>, <code>/annotations/**</code></td>
 <td><code>http://localhost:8093</code></td>
 <td>attendanceService</td>
@@ -168,11 +176,11 @@
 <ol>
 <li>El usuario envía credenciales a <code>POST /auth/login</code>.</li>
 <li><code>authService</code> valida con <strong>BCrypt</strong> y emite <strong>JWT</strong> (<code>accessToken</code> + <code>refreshToken</code>).</li>
-<li>Cada microservicio valida el token en rutas protegidas mediante filtro JWT.</li>
-<li><strong>RBAC</strong> con 4 roles: <code>ADMIN</code>, <code>DOCENTE</code>, <code>APODERADO</code>, <code>ESTUDIANTE</code>.</li>
-<li>Registro público deshabilitado; provisión de usuarios vía <code>POST /admin/users</code> (solo ADMIN).</li>
+<li>El <strong>gateway</strong> y cada microservicio validan el token en rutas protegidas.</li>
+<li><strong>RBAC</strong> con roles efectivos: <code>SUPER_ADMINISTRADOR</code> (Dirección), <code>ADMINISTRADOR</code> / <code>ADMINISTRATIVO</code> (Oficina), <code>DOCENTE</code>, <code>APODERADO</code>, <code>ESTUDIANTE</code>.</li>
+<li>Registro público deshabilitado; provisión vía <code>POST /admin/users</code>.</li>
 </ol>
-<p>Usuarios demo: <code>admin_colegio</code>, <code>prof_castillo</code>, <code>apoderado_demo</code>, <code>estudiante_demo</code> — contraseña <code>test1234</code>.</p>
+<p>Usuarios demo (password <code>test1234</code>): <code>admin_colegio</code>, <code>admin_oficina</code>, <code>prof_castillo</code>, <code>apoderado_demo</code>, <code>estudiante_demo</code>.</p>
 <hr>
 <h2>7. Stack tecnológico</h2>
 <table>
@@ -284,7 +292,17 @@
 </tr>
 </tbody></table>
 <hr>
-<h2>11. Conclusión</h2>
-<p>La arquitectura propuesta cumple los requisitos de la evaluación: <strong>microservicios desacoplados</strong>, <strong>integración frontend-backend vía API REST</strong>, <strong>persistencia independiente por servicio</strong> y <strong>punto de entrada único</strong> (gateway) que facilita el despliegue y las pruebas de integración con Postman.</p>
+<h2>11. Evolución post-EP3 (examen)</h2>
+<p>Sin cambiar el patrón de microservicios, se incorporó:</p>
+<ul>
+<li>Módulo de <strong>mensajería</strong> en <code>academicService</code></li>
+<li><strong>Orquestación ligera</strong> attendance → academic para alertas de asistencia</li>
+<li>Alertas al <strong>crear evaluaciones</strong> (mismo dominio academic)</li>
+<li>UI con confirmaciones y portals por rol más claros</li>
+</ul>
+<p>Detalle: <code>05_mejoras_e_innovacion_examen.md</code>.</p>
+<hr>
+<h2>12. Conclusión</h2>
+<p>La arquitectura cumple los requisitos del encargo: <strong>microservicios desacoplados</strong>, <strong>integración frontend-backend vía API REST</strong>, <strong>persistencia independiente por servicio</strong> y <strong>punto de entrada único</strong> (gateway). Para el examen, esa base sostiene además una <strong>innovación de comunicación en tiempo casi real</strong> hacia apoderados, sin romper el aislamiento de bases de datos.</p>
 </body>
 </html>

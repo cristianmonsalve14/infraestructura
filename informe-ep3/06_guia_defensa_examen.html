@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>06_guia_defensa_examen</title>
+  <style>
+  @page { margin: 18mm 16mm; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: #1f2937;
+    line-height: 1.55;
+    font-size: 11pt;
+    max-width: 100%;
+  }
+  h1 { color: #1e3a8a; font-size: 22pt; border-bottom: 2px solid #dbeafe; padding-bottom: 8px; }
+  h2 { color: #1d4ed8; font-size: 15pt; margin-top: 1.4em; }
+  h3 { color: #2563eb; font-size: 12.5pt; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 10pt; }
+  th, td { border: 1px solid #d1d5db; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #eff6ff; }
+  code { background: #f3f4f6; padding: 1px 4px; border-radius: 4px; font-size: 9.5pt; }
+  pre { background: #111827; color: #f9fafb; padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 9pt; }
+  pre code { background: transparent; color: inherit; }
+  img { max-width: 100%; height: auto; margin: 12px 0; }
+  blockquote { border-left: 4px solid #93c5fd; margin: 12px 0; padding: 4px 12px; color: #4b5563; }
+  hr { border: none; border-top: 1px solid #e5e7eb; margin: 20px 0; }
+</style>
+</head>
+<body><h1>06 — Guía de defensa del examen (agilizar software, código, BD y pruebas)</h1>
+<p><strong>Proyecto:</strong> Plataforma Libro de Clases Digital<br><strong>Equipo:</strong> Cristian Monsalve / Héctor Olivares<br><strong>Objetivo:</strong> Cumplir la recomendación docente de presentar con <strong>software corriendo</strong> y mostrar <strong>código, BD y pruebas</strong> sin perder tiempo.</p>
+<hr>
+<h2>1. Antes del día (checklist)</h2>
+<ul>
+<li><input disabled="" type="checkbox"> PostgreSQL con <code>librodigital_auth</code>, <code>librodigital_academic</code>, <code>librodigital_attendance</code></li>
+<li><input disabled="" type="checkbox"> <code>application-local.properties</code> en auth, academic, attendance y gateway (misma <code>jwt.secret</code>)</li>
+<li><input disabled="" type="checkbox"> Los 4 backends + frontend arrancan en el PC de defensa</li>
+<li><input disabled="" type="checkbox"> Probado el flujo innovación: lista → mensaje apoderado; evaluación → mensaje apoderado</li>
+<li><input disabled="" type="checkbox"> Navegador con pestañas listas: UI <code>:8094</code>, Opción B: DBeaver/pgAdmin, carpeta <code>informe-ep3</code></li>
+<li><input disabled="" type="checkbox"> ZIP / PDF del informe actualizado (docs <code>01</code>–<code>06</code>)</li>
+</ul>
+<h3>Arranque rápido (orden)</h3>
+<pre><code class="language-text">1. authService      :8091
+2. academicService  :8092
+3. attendanceService:8093
+4. apiGetaway       :8090
+5. frontend-react   :8094   → http://localhost:8094
+</code></pre>
+<p>Ver también <code>README.md</code> en la raíz del workspace.</p>
+<hr>
+<h2>2. Guion sugerido (≈ 12–15 min)</h2>
+<table>
+<thead>
+<tr>
+<th>Min</th>
+<th>Qué mostrar</th>
+<th>Quién / nota</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0–2</td>
+<td>Portada: arquitectura (diagrama) + “esto está corriendo ahora”</td>
+<td>Abrir UI login</td>
+</tr>
+<tr>
+<td>2–5</td>
+<td>Roles: Dirección / Oficina / Docente / Apoderado</td>
+<td>Cambiar usuario demo</td>
+</tr>
+<tr>
+<td>5–9</td>
+<td><strong>Innovación:</strong> pasar lista → confirmar → apoderado ve aviso; crear evaluación → aviso</td>
+<td>Núcleo del examen</td>
+</tr>
+<tr>
+<td>9–11</td>
+<td>Código: <code>AcademicApiClient.notifyGuardianAttendance</code> + <code>notifyGuardiansEvaluationCreated</code></td>
+<td>IDE ya abierto en esas clases</td>
+</tr>
+<tr>
+<td>11–13</td>
+<td>BD: tablas <code>conversations</code> / <code>messages</code> (academic) + <code>attendance_records</code></td>
+<td>pgAdmin</td>
+</tr>
+<tr>
+<td>13–15</td>
+<td>Pruebas: correr 1 <code>mvn test</code> (auth) o mostrar reporte JaCoCo; Vitest summary</td>
+<td>Terminal lista</td>
+</tr>
+</tbody></table>
+<p>Reservar 1–2 min para preguntas individuales.</p>
+<hr>
+<h2>3. Usuarios demo (password <code>test1234</code>)</h2>
+<table>
+<thead>
+<tr>
+<th>Usuario</th>
+<th>Rol</th>
+<th>Demo típica</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>admin_colegio</code></td>
+<td>SUPER_ADMINISTRADOR</td>
+<td>Dirección, estructura</td>
+</tr>
+<tr>
+<td><code>admin_oficina</code></td>
+<td>ADMINISTRATIVO</td>
+<td>Oficina / coordinación</td>
+</tr>
+<tr>
+<td><code>prof_castillo</code></td>
+<td>DOCENTE</td>
+<td>Lista + evaluaciones (innovación)</td>
+</tr>
+<tr>
+<td><code>apoderado_demo</code></td>
+<td>APODERADO</td>
+<td><strong>Ver alertas</strong> en Mensajes</td>
+</tr>
+<tr>
+<td><code>estudiante_demo</code></td>
+<td>ESTUDIANTE</td>
+<td>Portal alumno</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>4. Cómo mostrar código sin navegar 10 minutos</h2>
+<p>Tener <strong>3 pestañas fijas en el IDE</strong>:</p>
+<ol>
+<li><code>AcademicApiClient.java</code> (método <code>notifyGuardianAttendance</code>)</li>
+<li><code>MessageServiceImpl.java</code> (<code>notifyGuardianAttendance</code> / <code>notifyGuardiansEvaluationCreated</code>)</li>
+<li><code>EvaluationController.java</code> (hook en <code>createEvaluation</code>) + <code>ConfirmDialog.tsx</code></li>
+</ol>
+<p>Frase útil:<br><em>“Attendance no envía el mensaje; llama a academic, que es dueño de la mensajería. Si el notify falla, la lista igual se guarda.”</em></p>
+<hr>
+<h2>5. Cómo mostrar BD</h2>
+<p>Consultas mínimas (academic):</p>
+<pre><code class="language-sql">-- Últimas conversaciones TG
+SELECT id, conversation_type, student_id, teacher_id, guardian_id, updated_at
+FROM conversations
+ORDER BY updated_at DESC
+LIMIT 10;
+
+-- Últimos mensajes (avisos automáticos)
+SELECT id, conversation_id, body, created_at
+FROM messages
+ORDER BY created_at DESC
+LIMIT 10;
+</code></pre>
+<p>Asistencia (attendance):</p>
+<pre><code class="language-sql">SELECT id, session_id, student_id, status, updated_at
+FROM attendance_records
+ORDER BY updated_at DESC
+LIMIT 10;
+</code></pre>
+<hr>
+<h2>6. Cómo mostrar pruebas (rápido)</h2>
+<pre><code class="language-powershell"># Ejemplo vivo (1–2 min)
+cd authService
+mvn -q test
+
+# Frontend
+cd frontend-react
+npm test
+</code></pre>
+<p>Si no alcanza el tiempo: abrir <code>informe-ep3/jacoco-reports/authService/index.html</code> y decir cobertura EP3 + que las suites siguen green; el valor nuevo del examen es la <strong>demo funcional de alertas</strong>.</p>
+<hr>
+<h2>7. Plan B (si falla la red o un puerto)</h2>
+<ol>
+<li>Relanzar solo el servicio caído (puertos en <code>README.md</code>).</li>
+<li>Si PostgreSQL cae: reiniciar servicio Windows / Docker según cómo lo tengan.</li>
+<li>Video/screenshots previos del flujo innovación (último recurso).</li>
+<li>Explicar con el diagrama de <code>05_mejoras_e_innovacion_examen.md</code>.</li>
+</ol>
+<hr>
+<h2>8. Mensaje de cierre (15 s)</h2>
+<p><em>“En EP3 entregamos microservicios, persistencia por servicio y pruebas con métricas. Para el examen aplicamos el feedback: software listo para defensa y una innovación concreta —alertas inmediatas a apoderados al pasar lista y al publicar evaluaciones— integrada en la mensajería del colegio.”</em></p>
+</body>
+</html>

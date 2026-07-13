@@ -27,7 +27,10 @@
 </style>
 </head>
 <body><h1>02 — Descripción de la Persistencia de Datos</h1>
-<p><strong>Proyecto:</strong> Plataforma Libro de Clases Digital<br><strong>Asignatura:</strong> DSY1106 — Desarrollo Fullstack III<br><strong>Evaluación:</strong> Parcial N°3 — Encargo<br><strong>Equipo:</strong> Cristian Monsalve / Héctor Olivares  </p>
+<p><strong>Proyecto:</strong> Plataforma Libro de Clases Digital<br><strong>Asignatura:</strong> DSY1106 — Desarrollo Fullstack III<br><strong>Evaluación:</strong> Parcial N°3 — Encargo (base) · Actualizado para Examen 2026-07-13<br><strong>Equipo:</strong> Cristian Monsalve / Héctor Olivares  </p>
+<blockquote>
+<p><strong>Examen:</strong> las alertas a apoderados persisten como <strong>mensajes</strong> en <code>librodigital_academic</code> (ver sección 4.2 y documento <code>05</code>).</p>
+</blockquote>
 <hr>
 <h2>1. Estrategia general</h2>
 <p>El proyecto adopta el patrón <strong>Database per Service</strong>: cada microservicio posee su propia base de datos PostgreSQL, gestionada de forma independiente. Esto garantiza:</p>
@@ -186,10 +189,12 @@ public interface UserRepository extends JpaRepository&lt;User, Long&gt; {
 <li><code>guardians</code>, <code>teachers</code>, <code>students</code></li>
 <li><code>courses</code>, <code>subjects</code>, <code>enrollments</code></li>
 <li><code>evaluations</code>, <code>grades</code></li>
+<li><strong><code>conversations</code>, <code>messages</code>, <code>conversation_read_states</code></strong> (mensajería interna + alertas a apoderados)</li>
 </ul>
 </li>
 </ul>
 <p><strong>Beneficio de la normalización:</strong> elimina redundancia, garantiza integridad referencial dentro del dominio académico y facilita consultas por catálogo.</p>
+<p><strong>Mensajería (post-EP3):</strong> los avisos automáticos de asistencia y de nuevas evaluaciones se guardan como mensajes en conversaciones tipo TG (docente–apoderado–alumno). No requieren una cuarta base de datos: el dominio de comunicación familiar vive en academic.</p>
 <h3>4.3 librodigital_attendance (attendanceService)</h3>
 <p><img src="../diagrams/attendance_er_model.png" alt="Modelo ER Attendance"></p>
 <table>
@@ -201,17 +206,18 @@ public interface UserRepository extends JpaRepository&lt;User, Long&gt; {
 </thead>
 <tbody><tr>
 <td><code>class_sessions</code></td>
-<td>Sesión de clase (fecha, curso, asignatura, docente — IDs lógicos)</td>
+<td>Sesión de clase (fecha, curso, asignatura, docente — IDs lógicos; puede incluir sustituto)</td>
 </tr>
 <tr>
 <td><code>attendance_records</code></td>
-<td>Registro de asistencia por estudiante y sesión</td>
+<td>Registro de asistencia por estudiante y sesión (P/A/R/J)</td>
 </tr>
 <tr>
 <td><code>annotations</code></td>
 <td>Anotaciones de conducta vinculadas a estudiante/sesión</td>
 </tr>
 </tbody></table>
+<p>Al <strong>guardar</strong> un <code>attendance_record</code>, el servicio puede invocar <code>academicService</code> para notificar al apoderado; <strong>no</strong> duplica el mensaje en la BD de attendance.</p>
 <p><strong>Referencias lógicas cross-service:</strong></p>
 <table>
 <thead>
@@ -334,7 +340,12 @@ public interface UserRepository extends JpaRepository&lt;User, Long&gt; {
 </thead>
 <tbody><tr>
 <td><code>admin_colegio</code></td>
-<td>ADMIN</td>
+<td>SUPER_ADMINISTRADOR (Dirección)</td>
+<td><code>test1234</code></td>
+</tr>
+<tr>
+<td><code>admin_oficina</code></td>
+<td>ADMINISTRATIVO (Oficina)</td>
 <td><code>test1234</code></td>
 </tr>
 <tr>
@@ -353,7 +364,7 @@ public interface UserRepository extends JpaRepository&lt;User, Long&gt; {
 <td><code>test1234</code></td>
 </tr>
 </tbody></table>
-<p>Los scripts <code>*_schema.sql</code> incluyen registros demo para academic y attendance que permiten probar flujos completos sin carga manual.</p>
+<p>Los scripts <code>*_schema.sql</code> incluyen registros demo para academic y attendance. Tras crear evaluaciones o pasar lista, los avisos aparecen como filas en <code>messages</code> (academic).</p>
 <hr>
 <h2>10. Conclusión</h2>
 <p>La persistencia del sistema se implementa con <strong>JPA/Hibernate sobre PostgreSQL</strong>, siguiendo <strong>Database per Service</strong> y <strong>normalización 3FN</strong> en los dominios académico y de asistencia. Los scripts DDL en <code>infraestructura/ddl/</code> documentan el esquema físico; las entidades JPA en cada microservicio mantienen la sincronización en desarrollo. Esta arquitectura garantiza <strong>separación de responsabilidades</strong>, <strong>integridad referencial intra-servicio</strong> y <strong>escalabilidad</strong> acorde a los requisitos del caso Libro Digital.</p>
