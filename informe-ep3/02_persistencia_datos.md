@@ -2,9 +2,10 @@
 
 **Proyecto:** Plataforma Libro de Clases Digital  
 **Asignatura:** DSY1106 — Desarrollo Fullstack III  
-**Evaluación:** Parcial N°3 — Encargo  
+**Evaluación:** Parcial N°3 — Encargo (base) · Actualizado para Examen 2026-07-13  
 **Equipo:** Cristian Monsalve / Héctor Olivares  
 
+> **Examen:** las alertas a apoderados persisten como **mensajes** en `librodigital_academic` (ver sección 4.2 y documento `05`).
 ---
 
 ## 1. Estrategia general
@@ -137,8 +138,11 @@ El esquema académico fue **normalizado a Tercera Forma Normal (3FN)**:
   - `guardians`, `teachers`, `students`
   - `courses`, `subjects`, `enrollments`
   - `evaluations`, `grades`
+  - **`conversations`, `messages`, `conversation_read_states`** (mensajería interna + alertas a apoderados)
 
 **Beneficio de la normalización:** elimina redundancia, garantiza integridad referencial dentro del dominio académico y facilita consultas por catálogo.
+
+**Mensajería (post-EP3):** los avisos automáticos de asistencia y de nuevas evaluaciones se guardan como mensajes en conversaciones tipo TG (docente–apoderado–alumno). No requieren una cuarta base de datos: el dominio de comunicación familiar vive en academic.
 
 ### 4.3 librodigital_attendance (attendanceService)
 
@@ -146,9 +150,11 @@ El esquema académico fue **normalizado a Tercera Forma Normal (3FN)**:
 
 | Tabla | Descripción |
 |-------|-------------|
-| `class_sessions` | Sesión de clase (fecha, curso, asignatura, docente — IDs lógicos) |
-| `attendance_records` | Registro de asistencia por estudiante y sesión |
+| `class_sessions` | Sesión de clase (fecha, curso, asignatura, docente — IDs lógicos; puede incluir sustituto) |
+| `attendance_records` | Registro de asistencia por estudiante y sesión (P/A/R/J) |
 | `annotations` | Anotaciones de conducta vinculadas a estudiante/sesión |
+
+Al **guardar** un `attendance_record`, el servicio puede invocar `academicService` para notificar al apoderado; **no** duplica el mensaje en la BD de attendance.
 
 **Referencias lógicas cross-service:**
 
@@ -218,12 +224,13 @@ Usuarios de prueba (auth):
 
 | Usuario | Rol | Contraseña |
 |---------|-----|------------|
-| `admin_colegio` | ADMIN | `test1234` |
+| `admin_colegio` | SUPER_ADMINISTRADOR (Dirección) | `test1234` |
+| `admin_oficina` | ADMINISTRATIVO (Oficina) | `test1234` |
 | `prof_castillo` | DOCENTE | `test1234` |
 | `apoderado_demo` | APODERADO | `test1234` |
 | `estudiante_demo` | ESTUDIANTE | `test1234` |
 
-Los scripts `*_schema.sql` incluyen registros demo para academic y attendance que permiten probar flujos completos sin carga manual.
+Los scripts `*_schema.sql` incluyen registros demo para academic y attendance. Tras crear evaluaciones o pasar lista, los avisos aparecen como filas en `messages` (academic).
 
 ---
 

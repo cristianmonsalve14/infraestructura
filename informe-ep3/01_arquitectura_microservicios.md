@@ -2,16 +2,18 @@
 
 **Proyecto:** Plataforma Libro de Clases Digital  
 **Asignatura:** DSY1106 — Desarrollo Fullstack III  
-**Evaluación:** Parcial N°3 — Encargo  
+**Evaluación:** Parcial N°3 — Encargo (base) · Actualizado para Examen 2026-07-13  
 **Equipo:** Cristian Monsalve / Héctor Olivares  
+
+> **Examen:** mejoras e innovación (alertas a apoderados) en `05_mejoras_e_innovacion_examen.md`.
 
 ---
 
 ## 1. Resumen ejecutivo
 
-El sistema implementa una **arquitectura de microservicios** para la gestión académica de un colegio: autenticación centralizada, dominio académico (estudiantes, cursos, notas) y dominio de asistencia (sesiones, registros, anotaciones). Todos los servicios backend se exponen al exterior a través de un **API Gateway**, y el **frontend React** consume únicamente ese punto de entrada.
+El sistema implementa una **arquitectura de microservicios** para la gestión académica de un colegio: autenticación centralizada, dominio académico (estudiantes, cursos, notas, **mensajería**), dominio de asistencia (sesiones, registros, anotaciones) y un **frontend por roles**. Todos los servicios backend se exponen al exterior a través de un **API Gateway**, y el **frontend React** consume únicamente ese punto de entrada.
 
-La comunicación entre capas es **REST sobre HTTP/JSON**. Cada microservicio persiste en su **propia base PostgreSQL** (patrón *Database per Service*), sin claves foráneas entre bases distintas.
+La comunicación entre capas es **REST sobre HTTP/JSON**. Cada microservicio persiste en su **propia base PostgreSQL** (patrón *Database per Service*), sin claves foráneas entre bases distintas. Entre microservicios, cuando hace falta orquestación ligera (ej. avisar al apoderado al guardar asistencia), se usa **llamada REST** (`attendanceService` → `academicService`).
 
 ---
 
@@ -36,9 +38,9 @@ El diagrama muestra:
 |------------|---------|--------|-----------------|
 | API Gateway | `apiGetaway/` | 8090 | Enrutamiento, CORS, proxy hacia microservicios |
 | Auth Service | `authService/` | 8091 | Login, JWT, usuarios, roles (RBAC) |
-| Academic Service | `academicService/` | 8092 | Estudiantes, docentes, cursos, matrículas, evaluaciones, notas |
-| Attendance Service | `attendanceService/` | 8093 | Sesiones de clase, asistencia, anotaciones |
-| Frontend React | `frontend-react/` | 8094 | UI por rol (admin, docente, apoderado, estudiante) |
+| Academic Service | `academicService/` | 8092 | Estudiantes, docentes, cursos, matrículas, evaluaciones, notas, **mensajes / alertas** |
+| Attendance Service | `attendanceService/` | 8093 | Sesiones de clase, asistencia, anotaciones (+ notify a academic) |
+| Frontend React | `frontend-react/` | 8094 | UI por rol (Dirección, Oficina, docente, apoderado, estudiante) |
 
 ---
 
@@ -80,6 +82,7 @@ El diagrama muestra:
 | `/admin/**` | `http://localhost:8091` | authService |
 | `/students/**`, `/courses/**`, `/teachers/**`, `/subjects/**` | `http://localhost:8092` | academicService |
 | `/enrollments/**`, `/evaluations/**`, `/grades/**`, `/guardians/**` | `http://localhost:8092` | academicService |
+| `/messages/**` | `http://localhost:8092` | academicService (mensajería + notify) |
 | `/sessions/**`, `/attendances/**`, `/annotations/**` | `http://localhost:8093` | attendanceService |
 
 El frontend **no** invoca directamente los puertos 8091–8093 en desarrollo; siempre usa el gateway en **8090**, lo que desacopla la UI de la topología interna.
@@ -107,11 +110,11 @@ Flujo típico de prueba:
 
 1. El usuario envía credenciales a `POST /auth/login`.
 2. `authService` valida con **BCrypt** y emite **JWT** (`accessToken` + `refreshToken`).
-3. Cada microservicio valida el token en rutas protegidas mediante filtro JWT.
-4. **RBAC** con 4 roles: `ADMIN`, `DOCENTE`, `APODERADO`, `ESTUDIANTE`.
-5. Registro público deshabilitado; provisión de usuarios vía `POST /admin/users` (solo ADMIN).
+3. El **gateway** y cada microservicio validan el token en rutas protegidas.
+4. **RBAC** con roles efectivos: `SUPER_ADMINISTRADOR` (Dirección), `ADMINISTRADOR` / `ADMINISTRATIVO` (Oficina), `DOCENTE`, `APODERADO`, `ESTUDIANTE`.
+5. Registro público deshabilitado; provisión vía `POST /admin/users`.
 
-Usuarios demo: `admin_colegio`, `prof_castillo`, `apoderado_demo`, `estudiante_demo` — contraseña `test1234`.
+Usuarios demo (password `test1234`): `admin_colegio`, `admin_oficina`, `prof_castillo`, `apoderado_demo`, `estudiante_demo`.
 
 ---
 
@@ -165,6 +168,19 @@ Detalle ampliado: `infraestructura/docs/patrones.md`
 
 ---
 
-## 11. Conclusión
+## 11. Evolución post-EP3 (examen)
 
-La arquitectura propuesta cumple los requisitos de la evaluación: **microservicios desacoplados**, **integración frontend-backend vía API REST**, **persistencia independiente por servicio** y **punto de entrada único** (gateway) que facilita el despliegue y las pruebas de integración con Postman.
+Sin cambiar el patrón de microservicios, se incorporó:
+
+- Módulo de **mensajería** en `academicService`
+- **Orquestación ligera** attendance → academic para alertas de asistencia
+- Alertas al **crear evaluaciones** (mismo dominio academic)
+- UI con confirmaciones y portals por rol más claros
+
+Detalle: `05_mejoras_e_innovacion_examen.md`.
+
+---
+
+## 12. Conclusión
+
+La arquitectura cumple los requisitos del encargo: **microservicios desacoplados**, **integración frontend-backend vía API REST**, **persistencia independiente por servicio** y **punto de entrada único** (gateway). Para el examen, esa base sostiene además una **innovación de comunicación en tiempo casi real** hacia apoderados, sin romper el aislamiento de bases de datos.

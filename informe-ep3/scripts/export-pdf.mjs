@@ -8,9 +8,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const informeDir = resolve(__dirname, "..");
 
 const files = [
-  "01_arquitectura_microservicios.md",
-  "02_persistencia_datos.md",
-  "03_informe_pruebas_unitarias.md",
+  "examen_transversal.md",
 ];
 
 const browserCandidates = [

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>05_mejoras_e_innovacion_examen</title>
+  <style>
+  @page { margin: 18mm 16mm; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: #1f2937;
+    line-height: 1.55;
+    font-size: 11pt;
+    max-width: 100%;
+  }
+  h1 { color: #1e3a8a; font-size: 22pt; border-bottom: 2px solid #dbeafe; padding-bottom: 8px; }
+  h2 { color: #1d4ed8; font-size: 15pt; margin-top: 1.4em; }
+  h3 { color: #2563eb; font-size: 12.5pt; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 10pt; }
+  th, td { border: 1px solid #d1d5db; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #eff6ff; }
+  code { background: #f3f4f6; padding: 1px 4px; border-radius: 4px; font-size: 9.5pt; }
+  pre { background: #111827; color: #f9fafb; padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 9pt; }
+  pre code { background: transparent; color: inherit; }
+  img { max-width: 100%; height: auto; margin: 12px 0; }
+  blockquote { border-left: 4px solid #93c5fd; margin: 12px 0; padding: 4px 12px; color: #4b5563; }
+  hr { border: none; border-top: 1px solid #e5e7eb; margin: 20px 0; }
+</style>
+</head>
+<body><h1>05 — Mejoras post-EP3 e innovación (Examen)</h1>
+<p><strong>Proyecto:</strong> Plataforma Libro de Clases Digital<br><strong>Asignatura:</strong> DSY1106 — Desarrollo Fullstack III<br><strong>Evaluación:</strong> Examen — mejora del encargo EP3 + innovación<br><strong>Equipo:</strong> Cristian Monsalve / Héctor Olivares<br><strong>Fecha:</strong> 2026-07-13<br><strong>Base documental:</strong> Informe Evaluación Parcial N°3 (<code>01</code>–<code>04</code> de esta carpeta)</p>
+<hr>
+<h2>1. Contexto del examen</h2>
+<p>Tras la <strong>presentación N°3 (EP3)</strong>, el equipo incorporó el <strong>feedback del docente</strong> y una <strong>mejora innovadora</strong> sugerida: que al registrar asistencia o publicar una evaluación, el sistema <strong>avise de inmediato a los apoderados</strong> por la mensajería interna del colegio.</p>
+<p>Este documento <strong>complementa</strong> el informe EP3 (arquitectura, persistencia y pruebas). No lo reemplaza: actualiza el estado del software y detalla las nuevas capacidades.</p>
+<h3>Recomendación docente (defensa)</h3>
+<blockquote>
+<p>Traer el software <strong>corriendo en un PC propio</strong> o agilizar la presentación del <strong>software, código, BD y pruebas</strong>.</p>
+</blockquote>
+<p>Ver guía operativa: <code>06_guia_defensa_examen.md</code>.</p>
+<hr>
+<h2>2. Feedback EP3 → acciones realizadas</h2>
+<table>
+<thead>
+<tr>
+<th>Feedback / recomendación</th>
+<th>Respuesta del equipo</th>
+<th>Evidencia en el software</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Agilizar demo: app, código, BD y tests visibles</td>
+<td>Checklist de arranque, usuarios demo y ruta de demo grabada</td>
+<td><code>06_guia_defensa_examen.md</code>, <code>README.md</code> raíz</td>
+</tr>
+<tr>
+<td>Mejorar en base a presentación N°3 (claridad de roles y flujos reales)</td>
+<td>Separación <strong>Dirección</strong> vs <strong>Oficina</strong>; panel docente por curso; confirmaciones en acciones sensibles</td>
+<td>RBAC frontend + banners de ayuda</td>
+</tr>
+<tr>
+<td>Incorporar <strong>mejora innovadora</strong> (alertas a apoderados)</td>
+<td>Avisos automáticos al <strong>guardar lista</strong> y al <strong>crear evaluación</strong></td>
+<td>Mensajería TG + endpoints de notify</td>
+</tr>
+<tr>
+<td>Fortalecer valor pedagógico / comunicación familia–colegio</td>
+<td>Módulo de mensajes + alertas contextuales (alumno, asignatura, fecha, estado)</td>
+<td>Conversaciones TG docente–apoderado</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>3. Mejora innovadora: alertas inmediatas a apoderados</h2>
+<h3>3.1 Problema que resuelve</h3>
+<p>En un libro de clases digital, el apoderado suele enterarse de ausencias o fechas de prueba <strong>días después</strong> (cuaderno, circular o reunión). La innovación acerca el sistema a la vida real del colegio: <strong>cuando el docente actúa, la familia recibe el aviso al instante</strong> dentro de la misma plataforma (sin depender de SMS/email externos en esta etapa).</p>
+<h3>3.2 Idea central</h3>
+<table>
+<thead>
+<tr>
+<th>Evento docente</th>
+<th>Efecto automático</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Guardar registro de asistencia</strong> (P / A / R / J)</td>
+<td>Mensaje TG al apoderado de cada alumno con apoderado asignado</td>
+</tr>
+<tr>
+<td><strong>Crear evaluación</strong> (prueba, control, trabajo, examen)</td>
+<td>Mensaje TG a apoderados de los alumnos del curso de la asignatura</td>
+</tr>
+</tbody></table>
+<p>Ambos flujos <strong>no bloquean</strong> el guardado: si falla el aviso, la asistencia/evaluación se persiste igual (<strong>best-effort</strong>). Antes de confirmar en UI, el docente ve un <strong>diálogo de confirmación</strong> que advierte del aviso a apoderados.</p>
+<h3>3.3 Arquitectura del flujo (innovación)</h3>
+<pre><code>┌──────────────────────┐
+│ Docente (React UI)   │  ConfirmDialog → Guardar / Crear
+└──────────┬───────────┘
+           │ JWT vía Gateway :8090
+           ▼
+┌──────────────────────┐     HTTP interno      ┌────────────────────────────┐
+│ attendanceService    │ ───────────────────► │ academicService            │
+│ (guardar asistencia) │  notifyGuardian…     │ POST /messages/            │
+└──────────────────────┘  AcademicApiClient   │   attendance-notify        │
+                                              │ notifyGuardianAttendance() │
+┌──────────────────────┐                      │                            │
+│ academicService      │                      │ Abrir/reusar conversación  │
+│ (crear evaluación)   │ ───────────────────► │ tipo TG (docente–apoderado)│
+│ EvaluationController │  notifyGuardians…    │ + sendMessage(body)        │
+└──────────────────────┘                      └────────────┬───────────────┘
+                                                           ▼
+                                              ┌────────────────────────────┐
+                                              │ PostgreSQL academic        │
+                                              │ conversations / messages   │
+                                              └────────────────────────────┘
+                                                           ▼
+                                              ┌────────────────────────────┐
+                                              │ Apoderado ve el aviso en   │
+                                              │ módulo Mensajes (UI)       │
+                                              └────────────────────────────┘
+</code></pre>
+<h3>3.4 Contenido del aviso (ejemplo)</h3>
+<p><strong>Asistencia</strong></p>
+<pre><code>Aviso de asistencia
+Alumno: Juan Perez
+Asignatura: Matemática
+Fecha de la clase: 13-07-2026
+Estado: Ausente (A)
+
+Este mensaje se generó automáticamente al registrar la asistencia de la clase.
+</code></pre>
+<p><strong>Evaluación</strong></p>
+<pre><code>Aviso de evaluación
+Alumno: Juan Perez
+Curso: 1° Medio A
+Asignatura: Matemática
+Evaluación: Prueba unidad 2
+Tipo: PRUEBA
+Fecha: 15-07-2026
+
+Este mensaje se generó automáticamente al publicar una nueva evaluación.
+</code></pre>
+<h3>3.5 Por qué es innovadora (defensa oral)</h3>
+<ol>
+<li><strong>Tiempo real pedagógico</strong>: cierra el ciclo docente → familia en segundos.</li>
+<li><strong>Misma plataforma</strong>: reutiliza la mensajería interna (conversaciones TG), sin un canal paralelo frágil.</li>
+<li><strong>Resiliencia</strong>: el core (asistencia/evaluaciones) no depende del canal de aviso.</li>
+<li><strong>Trazabilidad</strong>: el historial queda en la conversación del apoderado (auditoría leve).</li>
+<li><strong>UX segura</strong>: <code>ConfirmDialog</code> reduce clics accidentales que dispararían notificaciones masivas.</li>
+<li><strong>Coherente con microservicios</strong>: attendance no escribe mensajes; <strong>delega</strong> en academic (dueño del dominio de mensajería).</li>
+</ol>
+<h3>3.6 Archivos / puntos de código clave</h3>
+<table>
+<thead>
+<tr>
+<th>Área</th>
+<th>Ubicación</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Notify asistencia (cliente)</td>
+<td><code>attendanceService/.../client/AcademicApiClient.java</code> → <code>notifyGuardianAttendance</code></td>
+</tr>
+<tr>
+<td>Persistencia + hook lista</td>
+<td>Controller/servicio de attendance al crear/actualizar registro</td>
+</tr>
+<tr>
+<td>API notify</td>
+<td><code>academicService/.../controller/MessageController.java</code> → <code>POST /messages/attendance-notify</code></td>
+</tr>
+<tr>
+<td>Lógica TG asistencia</td>
+<td><code>MessageServiceImpl.notifyGuardianAttendance</code></td>
+</tr>
+<tr>
+<td>Notify evaluaciones</td>
+<td><code>EvaluationController.createEvaluation</code> → <code>notifyGuardiansEvaluationCreated</code></td>
+</tr>
+<tr>
+<td>UI confirmación</td>
+<td><code>frontend-react/src/components/ConfirmDialog.tsx</code></td>
+</tr>
+<tr>
+<td>Pantallas</td>
+<td><code>Attendance.tsx</code>, <code>Evaluations.tsx</code></td>
+</tr>
+</tbody></table>
+<h3>3.6 Demo rápida de la innovación (2–3 min)</h3>
+<ol>
+<li>Login <code>prof_castillo</code> / <code>test1234</code> → <strong>Asistencia</strong> → pasar lista → confirmar → guardar.  </li>
+<li>Logout → login <code>apoderado_demo</code> → <strong>Mensajes</strong> → conversación con el docente → ver aviso.  </li>
+<li>De nuevo docente → <strong>Evaluaciones</strong> → crear prueba → confirmar → crear.  </li>
+<li>Apoderado → Mensajes → ver aviso de evaluación.</li>
+</ol>
+<hr>
+<h2>4. Otras mejoras incorporadas tras EP3</h2>
+<h3>4.1 Mensajería interna por roles</h3>
+<ul>
+<li>Tipos de conversación: oficina–docente, oficina–apoderado, oficina–alumno, <strong>docente–apoderado (TG)</strong>, docente–alumno.</li>
+<li>Distinción visual <strong>Dirección</strong> vs <strong>Oficina</strong> en la UI.</li>
+<li>Base para la innovación (los avisos usan TG).</li>
+</ul>
+<h3>4.2 Roles afinados (RBAC)</h3>
+<table>
+<thead>
+<tr>
+<th>Usuario demo</th>
+<th>Rol efectivo</th>
+<th>Uso en defensa</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>admin_colegio</code></td>
+<td>SUPER_ADMINISTRADOR (Dirección)</td>
+<td>Estructura, docentes, usuarios, consulta</td>
+</tr>
+<tr>
+<td><code>admin_oficina</code></td>
+<td>ADMINISTRATIVO (Oficina)</td>
+<td>Operación / coordinación</td>
+</tr>
+<tr>
+<td><code>prof_castillo</code> / <code>prof_ximena</code></td>
+<td>DOCENTE</td>
+<td>Lista, evaluaciones, notas, avisos</td>
+</tr>
+<tr>
+<td><code>apoderado_demo</code></td>
+<td>APODERADO</td>
+<td>Mensajes, portal familiar</td>
+</tr>
+<tr>
+<td><code>estudiante_demo</code></td>
+<td>ESTUDIANTE</td>
+<td>Portal alumno</td>
+</tr>
+</tbody></table>
+<p>Contraseña demo: <code>test1234</code>.</p>
+<h3>4.3 Calificaciones y nota final</h3>
+<ul>
+<li>Promedio de semestre: <code>CONTROL</code> + <code>PRUEBA</code> + <code>TRABAJO</code> (ponderados).</li>
+<li>Esquema de nota final definido por el colegio (ej. 70 % semestre + 30 % examen).</li>
+<li>Vista tipo planilla + <strong>exportación Excel/PDF</strong>.</li>
+</ul>
+<h3>4.4 Asistencia reforzada</h3>
+<ul>
+<li>Planilla tipo Excel (P/A/R/J), filtros, exportación.</li>
+<li>Admin: <strong>Clases y sustitutos</strong> (crear sesión, filtros curso/asignatura).</li>
+<li>Confirmación al crear registro y al guardar lista.</li>
+</ul>
+<h3>4.5 Experiencia docente</h3>
+<ul>
+<li>Contexto por curso seleccionado (mismo hilo en asistencia, evaluaciones, notas).</li>
+<li>Vinculación ficha docente ↔ usuario auth (email / <code>userId</code> / <code>authUsername</code>) para evitar 403.</li>
+</ul>
+<h3>4.6 Confirmaciones en acciones sensibles</h3>
+<p>Componente reutilizable <code>ConfirmDialog</code> en:</p>
+<ul>
+<li>Crear evaluación (con aviso a apoderados)</li>
+<li>Crear sesión / guardar lista</li>
+<li>Eliminar evaluación o sesión</li>
+</ul>
+<hr>
+<h2>5. Impacto en arquitectura y persistencia</h2>
+<table>
+<thead>
+<tr>
+<th>Aspecto</th>
+<th>EP3</th>
+<th>Post-EP3 / Examen</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Comunicación familia</td>
+<td>Consulta de datos en portal</td>
+<td><strong>Mensajes + alertas automáticas</strong></td>
+</tr>
+<tr>
+<td>academicService</td>
+<td>CRUD pedagógico</td>
+<td>+ <strong>MessageService</strong>, notify attendance/evaluation</td>
+</tr>
+<tr>
+<td>attendanceService</td>
+<td>Sesiones y registros</td>
+<td>+ <strong>llamada REST</strong> a academic al guardar lista</td>
+</tr>
+<tr>
+<td>Frontend</td>
+<td>CRUD por rol</td>
+<td>+ Mensajes, ConfirmDialog, exports, nota final</td>
+</tr>
+<tr>
+<td>Persistencia</td>
+<td>3 BD</td>
+<td>Sin nueva BD: mensajes en <strong>academic</strong> (conversaciones)</td>
+</tr>
+</tbody></table>
+<p>La arquitectura de microservicios del documento <code>01</code> se mantiene; la innovación es un <strong>caso de orquestación ligera</strong> entre attendance y academic via API (sin transacciones distribuidas).</p>
+<hr>
+<h2>6. Impacto en pruebas</h2>
+<p>Las suites EP3 (JUnit/Mockito/JaCoCo + Vitest) siguen siendo la base. Tras las mejoras:</p>
+<ul>
+<li>Se mantienen tests de acceso/seguridad (<code>AttendanceAccessServiceTest</code>, etc.).</li>
+<li>El flujo de notify está diseñado para <strong>no romper</strong> el CRUD si la mensajería falla (adecuado para demo y para tests de servicio).</li>
+<li>Checklist de defensa incluye ejecutar <code>mvn test</code> en un servicio y <code>npm test</code> en frontend (ver <code>06</code>).</li>
+</ul>
+<blockquote>
+<p>Nota: los reportes HTML JaCoCo/Vitest de <code>informe-ep3/jacoco-reports</code> y <code>coverage-frontend</code> corresponden a la corrida EP3. Para el examen se recomienda regenerar al menos un reporte fresco en vivo o actualizar copias si el tiempo lo permite.</p>
+</blockquote>
+<hr>
+<h2>7. Conclusión</h2>
+<p>La evolución respecto a EP3 fortalece el <strong>valor de negocio</strong> del Libro Digital: no solo registra información, sino que <strong>comunica de inmediato a la familia</strong>. La mejora innovadora de alertas a apoderados, respaldada por mensajería TG, confirmaciones UX y arquitectura Database-per-Service, responde al feedback de la presentación N°3 y prepara una defensa ágil con software en ejecución, código, BD y pruebas.</p>
+</body>
+</html>

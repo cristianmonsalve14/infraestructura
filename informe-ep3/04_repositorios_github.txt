@@ -1,48 +1,56 @@
 ================================================================================
-REPOSITORIOS GITHUB — Libro Digital (Evaluación Parcial N°3)
+REPOSITORIOS GITHUB — Libro Digital (EP3 + Examen)
 Equipo: Cristian Monsalve / Héctor Olivares
 Asignatura: DSY1106 — Desarrollo Fullstack III
-Fecha: 2026-06-20
+Fecha EP3: 2026-06-20
+Actualización Examen: 2026-07-13
 ================================================================================
 
 REPOSITORIO PRINCIPAL (documentación e infraestructura)
   URL:    https://github.com/cristianmonsalve14/infraestructura
   Carpeta: infraestructura/
   Contiene: diagramas de arquitectura y ER, scripts DDL, documentación técnica,
-            colección Postman, guías de despliegue y este informe EP3.
+            colección Postman, guías de despliegue e informe EP3/Examen
+            (carpeta informe-ep3/, docs 01–06).
 
 REPOSITORIO FRONTEND
   URL:    https://github.com/cristianmonsalve14/frontend-react
   Carpeta: frontend-react/
   Contiene: aplicación React + TypeScript + Vite + Tailwind. Consume la API
             exclusivamente a través del API Gateway (puerto 8090).
+            Incluye mensajería, ConfirmDialog, exports y flujos de alertas UX.
 
 REPOSITORIOS DE MICROSERVICIOS (backend con persistencia JPA)
 
   1. API Gateway
      URL:    https://github.com/cristianmonsalve14/apiGetaway
      Puerto: 8090
-     Rol:    Enrutamiento centralizado hacia auth, academic y attendance.
+     Rol:    Enrutamiento centralizado hacia auth, academic y attendance
+             (incluye /messages/** hacia academic).
 
   2. Auth Service
      URL:    https://github.com/cristianmonsalve14/authService
      Puerto: 8091
      BD:     librodigital_auth (PostgreSQL)
-     Rol:    Autenticación JWT, usuarios, roles RBAC.
+     Rol:    Autenticación JWT, usuarios, roles RBAC
+             (SUPER_ADMINISTRADOR, ADMINISTRATIVO, DOCENTE, APODERADO, ESTUDIANTE).
 
   3. Academic Service
      URL:    https://github.com/cristianmonsalve14/academicService
      Puerto: 8092
      BD:     librodigital_academic (PostgreSQL)
-     Rol:    Estudiantes, docentes, cursos, matrículas, evaluaciones, notas.
+     Rol:    Estudiantes, docentes, cursos, matrículas, evaluaciones, notas,
+             mensajería y alertas a apoderados (asistencia / evaluaciones).
 
   4. Attendance Service
      URL:    https://github.com/cristianmonsalve14/attendanceService
      Puerto: 8093
      BD:     librodigital_attendance (PostgreSQL)
-     Rol:    Sesiones de clase, registro de asistencia y anotaciones.
+     Rol:    Sesiones de clase, registro de asistencia, anotaciones;
+             notificación a academic al guardar lista (AcademicApiClient).
 
 ================================================================================
 NOTA: El workspace local agrupa todos los módulos en un solo directorio para
 desarrollo; en GitHub cada componente está versionado en su repositorio propio.
+Innovación examen: ver infraestructura/informe-ep3/05_mejoras_e_innovacion_examen.md
 ================================================================================

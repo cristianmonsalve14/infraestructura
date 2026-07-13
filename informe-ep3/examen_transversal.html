@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>examen_transversal</title>
+  <style>
+  @page { margin: 18mm 16mm; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: #1f2937;
+    line-height: 1.55;
+    font-size: 11pt;
+    max-width: 100%;
+  }
+  h1 { color: #1e3a8a; font-size: 22pt; border-bottom: 2px solid #dbeafe; padding-bottom: 8px; }
+  h2 { color: #1d4ed8; font-size: 15pt; margin-top: 1.4em; }
+  h3 { color: #2563eb; font-size: 12.5pt; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 10pt; }
+  th, td { border: 1px solid #d1d5db; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #eff6ff; }
+  code { background: #f3f4f6; padding: 1px 4px; border-radius: 4px; font-size: 9.5pt; }
+  pre { background: #111827; color: #f9fafb; padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 9pt; }
+  pre code { background: transparent; color: inherit; }
+  img { max-width: 100%; height: auto; margin: 12px 0; }
+  blockquote { border-left: 4px solid #93c5fd; margin: 12px 0; padding: 4px 12px; color: #4b5563; }
+  hr { border: none; border-top: 1px solid #e5e7eb; margin: 20px 0; }
+</style>
+</head>
+<body><h1>Examen Transversal — Plataforma Libro de Clases Digital</h1>
+<p><strong>Asignatura:</strong> DSY1106 — Desarrollo Fullstack III<br><strong>Proyecto:</strong> Plataforma Libro de Clases Digital<br><strong>Equipo:</strong> Cristian Monsalve / Héctor Olivares<br><strong>Base:</strong> Evaluación Parcial N°3 (2026-06-20)<br><strong>Actualización examen:</strong> 2026-07-13  </p>
+<p>Este documento <strong>unifica</strong> en un solo informe: arquitectura de microservicios, persistencia de datos, pruebas unitarias con métricas, repositorios GitHub, y las <strong>mejoras e innovación</strong> del examen (alertas inmediatas a apoderados).</p>
+<hr>
+<h1>Índice</h1>
+<ol>
+<li><a href="#parte-i--arquitectura-de-microservicios">Arquitectura de microservicios</a></li>
+<li><a href="#parte-ii--persistencia-de-datos">Persistencia de datos</a></li>
+<li><a href="#parte-iii--pruebas-unitarias-y-m%C3%A9tricas">Pruebas unitarias y métricas</a></li>
+<li><a href="#parte-iv--repositorios-github">Repositorios GitHub</a></li>
+<li><a href="#parte-v--mejoras-post-ep3-e-innovaci%C3%B3n-del-examen">Mejoras post-EP3 e innovación</a></li>
+<li><a href="#conclusi%C3%B3n-general">Conclusión general</a></li>
+</ol>
+<hr>
+<h1>Parte I — Arquitectura de microservicios</h1>
+<h2>1. Resumen ejecutivo</h2>
+<p>El sistema implementa una <strong>arquitectura de microservicios</strong> para la gestión académica de un colegio: autenticación centralizada, dominio académico (estudiantes, cursos, notas, <strong>mensajería</strong>), dominio de asistencia (sesiones, registros, anotaciones) y un <strong>frontend por roles</strong>. Todos los servicios backend se exponen al exterior a través de un <strong>API Gateway</strong>, y el <strong>frontend React</strong> consume únicamente ese punto de entrada.</p>
+<p>La comunicación entre capas es <strong>REST sobre HTTP/JSON</strong>. Cada microservicio persiste en su <strong>propia base PostgreSQL</strong> (patrón <em>Database per Service</em>), sin claves foráneas entre bases distintas. Entre microservicios, cuando hace falta orquestación ligera (ej. avisar al apoderado al guardar asistencia), se usa <strong>llamada REST</strong> (<code>attendanceService</code> → <code>academicService</code>).</p>
+<h2>2. Diagrama de arquitectura</h2>
+<p><img src="diagramas/architecture_patterns_simple.png" alt="Diagrama de arquitectura y patrones"></p>
+<p><em>Fuente editable:</em> <code>infraestructura/diagrams/architecture_patterns_simple.puml</code></p>
+<p>El diagrama muestra:</p>
+<ul>
+<li><strong>Cliente web</strong> (<code>frontend-react</code>, puerto 8094)</li>
+<li><strong>API Gateway</strong> (<code>apiGetaway</code>, puerto 8090) como único punto de entrada</li>
+<li><strong>Tres microservicios</strong> backend con sus bases de datos dedicadas</li>
+<li>Patrones: API Gateway, Database per Service, Repository, DTO, Service Layer, MVC</li>
+</ul>
+<h2>3. Componentes del sistema</h2>
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th>Carpeta</th>
+<th>Puerto</th>
+<th>Responsabilidad</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>API Gateway</td>
+<td><code>apiGetaway/</code></td>
+<td>8090</td>
+<td>Enrutamiento, CORS, proxy hacia microservicios</td>
+</tr>
+<tr>
+<td>Auth Service</td>
+<td><code>authService/</code></td>
+<td>8091</td>
+<td>Login, JWT, usuarios, roles (RBAC)</td>
+</tr>
+<tr>
+<td>Academic Service</td>
+<td><code>academicService/</code></td>
+<td>8092</td>
+<td>Estudiantes, docentes, cursos, matrículas, evaluaciones, notas, <strong>mensajes / alertas</strong></td>
+</tr>
+<tr>
+<td>Attendance Service</td>
+<td><code>attendanceService/</code></td>
+<td>8093</td>
+<td>Sesiones de clase, asistencia, anotaciones (+ notify a academic)</td>
+</tr>
+<tr>
+<td>Frontend React</td>
+<td><code>frontend-react/</code></td>
+<td>8094</td>
+<td>UI por rol (Dirección, Oficina, docente, apoderado, estudiante)</td>
+</tr>
+</tbody></table>
+<h2>4. Flujo Frontend ↔ Backend ↔ Persistencia</h2>
+<pre><code>┌─────────────────┐
+│  frontend-react │  React 19 + TypeScript + Vite
+│    :8094        │  VITE_API_URL → http://localhost:8090
+└────────┬────────┘
+         │  HTTP/JSON + Authorization: Bearer {JWT}
+         ▼
+┌─────────────────┐
+│   apiGetaway    │  Spring Cloud Gateway 2025.1.2
+│    :8090        │
+└────────┬────────┘
+         │
+    ┌────┴────┬────────────┬──────────────┐
+    ▼         ▼            ▼              ▼
+/auth/**  /students/**  /sessions/**   /admin/**
+    │     /courses/**   /attendances/**
+    │     /grades/**    /annotations/**
+    │     /messages/**
+    ▼         ▼            ▼
+┌────────┐ ┌──────────┐ ┌──────────────┐
+│  auth  │ │ academic │ │  attendance  │
+│ :8091  │ │  :8092   │ │    :8093     │
+└───┬────┘ └────┬─────┘ └──────┬───────┘
+    ▼           ▼              ▼
+ PostgreSQL   PostgreSQL      PostgreSQL
+ librodigital librodigital    librodigital
+    _auth       _academic       _attendance
+</code></pre>
+<h3>Rutas del Gateway (extracto)</h3>
+<table>
+<thead>
+<tr>
+<th>Prefijo</th>
+<th>Destino</th>
+<th>Servicio</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/auth/**</code></td>
+<td><code>http://localhost:8091</code></td>
+<td>authService</td>
+</tr>
+<tr>
+<td><code>/admin/**</code></td>
+<td><code>http://localhost:8091</code></td>
+<td>authService</td>
+</tr>
+<tr>
+<td><code>/students/**</code>, <code>/courses/**</code>, <code>/teachers/**</code>, <code>/subjects/**</code></td>
+<td><code>http://localhost:8092</code></td>
+<td>academicService</td>
+</tr>
+<tr>
+<td><code>/enrollments/**</code>, <code>/evaluations/**</code>, <code>/grades/**</code>, <code>/guardians/**</code></td>
+<td><code>http://localhost:8092</code></td>
+<td>academicService</td>
+</tr>
+<tr>
+<td><code>/messages/**</code></td>
+<td><code>http://localhost:8092</code></td>
+<td>academicService (mensajería + notify)</td>
+</tr>
+<tr>
+<td><code>/sessions/**</code>, <code>/attendances/**</code>, <code>/annotations/**</code></td>
+<td><code>http://localhost:8093</code></td>
+<td>attendanceService</td>
+</tr>
+</tbody></table>
+<p>El frontend <strong>no</strong> invoca directamente los puertos 8091–8093; siempre usa el gateway en <strong>8090</strong>.</p>
+<h2>5. API REST</h2>
+<ul>
+<li><strong>Colección Postman:</strong> <code>infraestructura/postman/Libro_Digital.postman_collection.json</code></li>
+<li>Flujo: <code>POST /auth/login</code> → <code>Authorization: Bearer {token}</code> → CRUD academic / attendance según rol</li>
+</ul>
+<h2>6. Seguridad transversal</h2>
+<p><img src="diagramas/security_authentication.png" alt="Flujo de autenticación JWT"></p>
+<ol>
+<li>Credenciales a <code>POST /auth/login</code>.</li>
+<li><code>authService</code> valida con <strong>BCrypt</strong> y emite <strong>JWT</strong>.</li>
+<li>Gateway y microservicios validan el token.</li>
+<li><strong>RBAC:</strong> <code>SUPER_ADMINISTRADOR</code> (Dirección), <code>ADMINISTRATIVO</code> (Oficina), <code>DOCENTE</code>, <code>APODERADO</code>, <code>ESTUDIANTE</code>.</li>
+<li>Registro público deshabilitado; altas vía <code>POST /admin/users</code>.</li>
+</ol>
+<p>Usuarios demo (password <code>test1234</code>): <code>admin_colegio</code>, <code>admin_oficina</code>, <code>prof_castillo</code>, <code>apoderado_demo</code>, <code>estudiante_demo</code>.</p>
+<h2>7. Stack tecnológico</h2>
+<table>
+<thead>
+<tr>
+<th>Capa</th>
+<th>Tecnologías</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Backend</td>
+<td>Java 21, Spring Boot 4.1.0, Spring Security, Spring Data JPA, Maven</td>
+</tr>
+<tr>
+<td>Gateway</td>
+<td>Spring Cloud Gateway 2025.1.2</td>
+</tr>
+<tr>
+<td>Frontend</td>
+<td>React 19, TypeScript, Vite 8, Tailwind CSS, React Router</td>
+</tr>
+<tr>
+<td>Base de datos</td>
+<td>PostgreSQL 16+ (tres bases lógicas)</td>
+</tr>
+<tr>
+<td>Testing backend</td>
+<td>JUnit 5, Mockito, Spring Boot Test, JaCoCo 0.8.12</td>
+</tr>
+<tr>
+<td>API testing</td>
+<td>Postman Collection</td>
+</tr>
+</tbody></table>
+<h2>8. Patrones de diseño</h2>
+<table>
+<thead>
+<tr>
+<th>Patrón</th>
+<th>Aplicación</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>API Gateway</strong></td>
+<td><code>apiGetaway</code> centraliza rutas</td>
+</tr>
+<tr>
+<td><strong>Database per Service</strong></td>
+<td>Tres bases PostgreSQL independientes</td>
+</tr>
+<tr>
+<td><strong>Repository</strong></td>
+<td><code>JpaRepository</code> por entidad</td>
+</tr>
+<tr>
+<td><strong>DTO</strong></td>
+<td>Separados de entidades JPA</td>
+</tr>
+<tr>
+<td><strong>Service Layer</strong></td>
+<td>Lógica en <code>*ServiceImpl</code></td>
+</tr>
+<tr>
+<td><strong>MVC</strong></td>
+<td>Controllers REST + React</td>
+</tr>
+</tbody></table>
+<h2>9. Orden de arranque</h2>
+<ol>
+<li>PostgreSQL (<code>infraestructura/ddl/00_create_databases.sql</code>)</li>
+<li><code>authService</code> → 8091</li>
+<li><code>academicService</code> → 8092</li>
+<li><code>attendanceService</code> → 8093</li>
+<li><code>apiGetaway</code> → 8090</li>
+<li><code>frontend-react</code> → 8094</li>
+</ol>
+<h2>10. Diagramas complementarios</h2>
+<table>
+<thead>
+<tr>
+<th>Diagrama</th>
+<th>Ubicación</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ER Auth</td>
+<td><code>infraestructura/diagrams/auth_er_model.png</code></td>
+</tr>
+<tr>
+<td>ER Academic</td>
+<td><code>infraestructura/diagrams/academic_er_model.png</code></td>
+</tr>
+<tr>
+<td>ER Attendance</td>
+<td><code>infraestructura/diagrams/attendance_er_model.png</code></td>
+</tr>
+<tr>
+<td>Autorización RBAC</td>
+<td><code>infraestructura/diagrams/security_authorization.png</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h1>Parte II — Persistencia de datos</h1>
+<h2>1. Estrategia general</h2>
+<p>Patrón <strong>Database per Service</strong>: cada microservicio tiene su propia base PostgreSQL.</p>
+<ul>
+<li>Autonomía por dominio, escalabilidad e aislamiento de fallos</li>
+<li><strong>Sin FK entre bases distintas</strong>; IDs lógicos validados en servicio o vía REST</li>
+</ul>
+<h2>2. Inventario de bases</h2>
+<table>
+<thead>
+<tr>
+<th>Base de datos</th>
+<th>Microservicio</th>
+<th>Puerto</th>
+<th>Script DDL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>librodigital_auth</code></td>
+<td>authService</td>
+<td>8091</td>
+<td><code>infraestructura/ddl/auth_schema.sql</code></td>
+</tr>
+<tr>
+<td><code>librodigital_academic</code></td>
+<td>academicService</td>
+<td>8092</td>
+<td><code>infraestructura/ddl/academic_schema.sql</code></td>
+</tr>
+<tr>
+<td><code>librodigital_attendance</code></td>
+<td>attendanceService</td>
+<td>8093</td>
+<td><code>infraestructura/ddl/attendance_schema.sql</code></td>
+</tr>
+</tbody></table>
+<pre><code class="language-sql">CREATE DATABASE librodigital_auth;
+CREATE DATABASE librodigital_academic;
+CREATE DATABASE librodigital_attendance;
+</code></pre>
+<h2>3. Spring Data JPA + Hibernate</h2>
+<pre><code class="language-properties">spring.datasource.url=jdbc:postgresql://localhost:5432/librodigital_auth
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+</code></pre>
+<p>Capas: Controller → Service → Repository → Entidad JPA → PostgreSQL.</p>
+<p>En producción: <code>ddl-auto=validate</code> + scripts versionados en <code>infraestructura/ddl/</code>.</p>
+<h2>4. Esquemas por servicio</h2>
+<h3>4.1 librodigital_auth</h3>
+<p><img src="../diagrams/auth_er_model.png" alt="Modelo ER Auth"></p>
+<table>
+<thead>
+<tr>
+<th>Tabla</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>users</code></td>
+<td>Credenciales, email, estado</td>
+</tr>
+<tr>
+<td><code>role</code></td>
+<td>Catálogo de roles</td>
+</tr>
+<tr>
+<td><code>user_roles</code></td>
+<td>N:M usuario ↔ rol</td>
+</tr>
+</tbody></table>
+<h3>4.2 librodigital_academic (3FN)</h3>
+<p><img src="../diagrams/academic_er_model.png" alt="Modelo ER Academic"></p>
+<ul>
+<li>Catálogos: estados, tipos de evaluación, años académicos, etc.</li>
+<li>Entidades: <code>guardians</code>, <code>teachers</code>, <code>students</code>, <code>courses</code>, <code>subjects</code>, <code>enrollments</code>, <code>evaluations</code>, <code>grades</code></li>
+<li><strong>Mensajería (examen):</strong> <code>conversations</code>, <code>messages</code>, <code>conversation_read_states</code> — avisos a apoderados (asistencia / evaluaciones) en conversaciones TG</li>
+</ul>
+<h3>4.3 librodigital_attendance</h3>
+<p><img src="../diagrams/attendance_er_model.png" alt="Modelo ER Attendance"></p>
+<table>
+<thead>
+<tr>
+<th>Tabla</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>class_sessions</code></td>
+<td>Sesión (fecha, curso, asignatura, docente; sustituto opcional)</td>
+</tr>
+<tr>
+<td><code>attendance_records</code></td>
+<td>Asistencia P/A/R/J</td>
+</tr>
+<tr>
+<td><code>annotations</code></td>
+<td>Anotaciones de conducta</td>
+</tr>
+</tbody></table>
+<p>Referencias lógicas a academic: <code>course_id</code>, <code>subject_id</code>, <code>teacher_id</code>, <code>student_id</code> (sin FK física). Al guardar asistencia, attendance puede <strong>llamar a academic</strong> para notificar; el mensaje <strong>no</strong> se duplica en la BD de attendance.</p>
+<h2>5. Scripts y migraciones</h2>
+<table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Uso</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>00_create_databases.sql</code></td>
+<td>Crear las 3 bases</td>
+</tr>
+<tr>
+<td><code>auth_schema.sql</code> / <code>academic_schema.sql</code> / <code>attendance_schema.sql</code></td>
+<td>Esquema + demo</td>
+</tr>
+<tr>
+<td><code>migrations/001–004</code></td>
+<td>Actualizar BDs antiguas</td>
+</tr>
+</tbody></table>
+<p><strong>No se usan procedimientos almacenados:</strong> JPA/Hibernate + JPQL + DDL versionado.</p>
+<h2>6. Transacciones y seguridad de datos</h2>
+<ul>
+<li>Transacciones <strong>locales</strong> (<code>@Transactional</code>); sin 2PC entre servicios</li>
+<li>Consistencia eventual por validación de IDs y APIs</li>
+<li>Contraseñas <strong>BCrypt</strong>; JWT stateless; DTOs sin campos sensibles</li>
+</ul>
+<h2>7. Datos de demostración</h2>
+<table>
+<thead>
+<tr>
+<th>Usuario</th>
+<th>Rol</th>
+<th>Contraseña</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>admin_colegio</code></td>
+<td>SUPER_ADMINISTRADOR (Dirección)</td>
+<td><code>test1234</code></td>
+</tr>
+<tr>
+<td><code>admin_oficina</code></td>
+<td>ADMINISTRATIVO (Oficina)</td>
+<td><code>test1234</code></td>
+</tr>
+<tr>
+<td><code>prof_castillo</code></td>
+<td>DOCENTE</td>
+<td><code>test1234</code></td>
+</tr>
+<tr>
+<td><code>apoderado_demo</code></td>
+<td>APODERADO</td>
+<td><code>test1234</code></td>
+</tr>
+<tr>
+<td><code>estudiante_demo</code></td>
+<td>ESTUDIANTE</td>
+<td><code>test1234</code></td>
+</tr>
+</tbody></table>
+<p>Tras pasar lista o crear evaluación, los avisos quedan en <code>messages</code> (academic).</p>
+<hr>
+<h1>Parte III — Pruebas unitarias y métricas</h1>
+<p><strong>Fecha de ejecución (métricas EP3):</strong> 2026-06-20  </p>
+<p>La innovación de alertas se valida preferentemente con <strong>demo funcional</strong> (docente → apoderado). En defensa se puede ejecutar un <code>mvn test</code> / <code>npm test</code> en vivo.</p>
+<h2>1. Resumen ejecutivo</h2>
+<table>
+<thead>
+<tr>
+<th>Servicio</th>
+<th>Clases de test</th>
+<th>Métodos de test</th>
+<th>Cobertura instrucciones</th>
+<th>Cobertura ramas</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>authService</strong></td>
+<td>7</td>
+<td>33</td>
+<td><strong>91 %</strong></td>
+<td><strong>71 %</strong></td>
+</tr>
+<tr>
+<td><strong>academicService</strong></td>
+<td>27</td>
+<td>147</td>
+<td><strong>71 %</strong></td>
+<td><strong>49 %</strong></td>
+</tr>
+<tr>
+<td><strong>attendanceService</strong></td>
+<td>13</td>
+<td>84</td>
+<td><strong>80 %</strong></td>
+<td><strong>60 %</strong></td>
+</tr>
+<tr>
+<td><strong>apiGetaway</strong></td>
+<td>1</td>
+<td>1</td>
+<td>N/A*</td>
+<td>N/A*</td>
+</tr>
+<tr>
+<td><strong>frontend-react</strong></td>
+<td>10</td>
+<td>53</td>
+<td><strong>6 %</strong> global**</td>
+<td><strong>3 %</strong> global**</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>58</strong></td>
+<td><strong>318</strong></td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p>* Gateway: smoke <code>contextLoads</code>.<br>** Módulos críticos frontend con alta cobertura: <code>permissions.ts</code> 94 %, <code>Login.tsx</code> 92 %, <code>client.ts</code> 100 %.</p>
+<p><strong>Resultado:</strong> backend <code>BUILD SUCCESS</code> + <strong>53/53</strong> frontend — <strong>318 tests</strong>, <strong>0 fallos</strong>.</p>
+<h2>2. Herramientas</h2>
+<p>JUnit 5, Mockito, Spring Boot Test, JaCoCo 0.8.12, Maven Surefire, Vitest 4, React Testing Library, @vitest/coverage-v8.</p>
+<pre><code class="language-powershell">cd authService
+mvn clean test jacoco:report
+# → target/site/jacoco/index.html
+
+cd frontend-react
+npm run test:coverage
+# → coverage/index.html
+</code></pre>
+<p>Copias en el encargo: <code>informe-ep3/jacoco-reports/</code> y <code>informe-ep3/coverage-frontend/</code>.</p>
+<h2>3. Cobertura por servicio (síntesis)</h2>
+<pre><code>authService       ██████████████████████████████████████████████  91%
+attendanceService ████████████████████████████████████████        80%
+academicService   ███████████████████████████████████             71%
+</code></pre>
+<ul>
+<li><strong>auth:</strong> controllers, login, admin users, JWT, excepciones  </li>
+<li><strong>academic:</strong> CRUD pedagógico, seguridad, validadores  </li>
+<li><strong>attendance:</strong> sesiones, asistencia, anotaciones, validación</li>
+</ul>
+<h2>4. Ejemplo backend (login)</h2>
+<pre><code class="language-java">@Test
+void login_success() {
+    when(userRepository.findByUsername(&quot;prof_castillo&quot;)).thenReturn(Optional.of(user));
+    when(passwordEncoder.matches(&quot;test1234&quot;, &quot;encoded&quot;)).thenReturn(true);
+    when(jwtUtil.generateToken(user)).thenReturn(&quot;mock-jwt-token&quot;);
+    AuthResponse response = authService.login(request);
+    assertEquals(&quot;mock-jwt-token&quot;, response.getAccessToken());
+}
+</code></pre>
+<h2>5. Frontend — módulos críticos</h2>
+<table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Líneas</th>
+<th>Qué se prueba</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>auth/permissions.ts</code></td>
+<td>94 %</td>
+<td>RBAC</td>
+</tr>
+<tr>
+<td><code>Login.tsx</code></td>
+<td>92 %</td>
+<td>Login y validación</td>
+</tr>
+<tr>
+<td><code>api/client.ts</code></td>
+<td>100 %</td>
+<td>URLs y JWT</td>
+</tr>
+<tr>
+<td>Validadores RUT/email/fecha</td>
+<td>93–100 %</td>
+<td>Formularios</td>
+</tr>
+</tbody></table>
+<p>Integración complementaria: colección <strong>Postman</strong> vía gateway <code>:8090</code> + E2E manual por rol.</p>
+<h2>6. Conclusión de pruebas</h2>
+<p>Las suites cubren autenticación, CRUD, asistencia, permisos y validadores con métricas JaCoCo/Vitest (EP3). La innovación del examen se demuestra con flujo E2E: guardar lista / crear evaluación → mensaje en <code>apoderado_demo</code>. El notify es <strong>best-effort</strong> (no rompe el CRUD si falla la mensajería).</p>
+<hr>
+<h1>Parte IV — Repositorios GitHub</h1>
+<table>
+<thead>
+<tr>
+<th>Repositorio</th>
+<th>URL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Infraestructura</td>
+<td><a href="https://github.com/cristianmonsalve14/infraestructura">https://github.com/cristianmonsalve14/infraestructura</a></td>
+</tr>
+<tr>
+<td>Frontend React</td>
+<td><a href="https://github.com/cristianmonsalve14/frontend-react">https://github.com/cristianmonsalve14/frontend-react</a></td>
+</tr>
+<tr>
+<td>API Gateway</td>
+<td><a href="https://github.com/cristianmonsalve14/apiGetaway">https://github.com/cristianmonsalve14/apiGetaway</a></td>
+</tr>
+<tr>
+<td>Auth Service</td>
+<td><a href="https://github.com/cristianmonsalve14/authService">https://github.com/cristianmonsalve14/authService</a></td>
+</tr>
+<tr>
+<td>Academic Service</td>
+<td><a href="https://github.com/cristianmonsalve14/academicService">https://github.com/cristianmonsalve14/academicService</a></td>
+</tr>
+<tr>
+<td>Attendance Service</td>
+<td><a href="https://github.com/cristianmonsalve14/attendanceService">https://github.com/cristianmonsalve14/attendanceService</a></td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Servicio</th>
+<th>Puerto</th>
+<th>BD</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>apiGetaway</td>
+<td>8090</td>
+<td>—</td>
+</tr>
+<tr>
+<td>authService</td>
+<td>8091</td>
+<td><code>librodigital_auth</code></td>
+</tr>
+<tr>
+<td>academicService</td>
+<td>8092</td>
+<td><code>librodigital_academic</code></td>
+</tr>
+<tr>
+<td>attendanceService</td>
+<td>8093</td>
+<td><code>librodigital_attendance</code></td>
+</tr>
+</tbody></table>
+<p>El workspace local agrupa los módulos; en GitHub cada componente tiene su repositorio.</p>
+<hr>
+<h1>Parte V — Mejoras post-EP3 e innovación del examen</h1>
+<h2>1. Contexto</h2>
+<p>Tras la <strong>presentación N°3</strong>, el equipo incorporó el feedback docente y la <strong>mejora innovadora</strong> recomendada: al registrar asistencia o publicar una evaluación, el sistema <strong>avisa de inmediato a los apoderados</strong> por la mensajería interna.</p>
+<h2>2. Feedback EP3 → acciones</h2>
+<table>
+<thead>
+<tr>
+<th>Feedback</th>
+<th>Respuesta</th>
+<th>Evidencia</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Agilizar demo (app, código, BD, tests)</td>
+<td>App lista en PC + checklist</td>
+<td>README + stack levantado</td>
+</tr>
+<tr>
+<td>Claridad de roles y flujos reales</td>
+<td>Dirección vs Oficina; panel docente por curso</td>
+<td>RBAC + UI</td>
+</tr>
+<tr>
+<td><strong>Innovación: alertas a apoderados</strong></td>
+<td>Notify al guardar lista y al crear evaluación</td>
+<td>Mensajería TG</td>
+</tr>
+<tr>
+<td>Comunicación familia–colegio</td>
+<td>Mensajes contextuales</td>
+<td>Conversaciones TG</td>
+</tr>
+</tbody></table>
+<h2>3. Innovación: alertas inmediatas a apoderados</h2>
+<h3>Problema</h3>
+<p>El apoderado suele enterarse tarde de ausencias o fechas de prueba. La innovación acerca el Libro Digital a la realidad: <strong>cuando el docente actúa, la familia recibe el aviso al instante</strong> en la misma plataforma.</p>
+<h3>Idea central</h3>
+<table>
+<thead>
+<tr>
+<th>Evento docente</th>
+<th>Efecto automático</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Guardar asistencia (P / A / R / J)</td>
+<td>Mensaje TG al apoderado (si tiene asignado)</td>
+</tr>
+<tr>
+<td>Crear evaluación</td>
+<td>Mensaje TG a apoderados del curso</td>
+</tr>
+</tbody></table>
+<ul>
+<li><strong>Best-effort:</strong> si falla el aviso, la lista/evaluación igual se guarda  </li>
+<li><strong>ConfirmDialog</strong> en UI aviso antes de publicar</li>
+</ul>
+<h3>Arquitectura del flujo</h3>
+<pre><code>Docente (React) + ConfirmDialog
+        │ JWT / Gateway :8090
+        ▼
+attendanceService ──REST──► academicService  POST /messages/attendance-notify
+                             MessageServiceImpl.notifyGuardianAttendance
+academicService (crear eval)
+  EvaluationController ──► notifyGuardiansEvaluationCreated
+                             │
+                             ▼
+                    conversations / messages (PostgreSQL academic)
+                             │
+                             ▼
+                    Apoderado → módulo Mensajes
+</code></pre>
+<h3>Ejemplo de aviso (asistencia)</h3>
+<pre><code>Aviso de asistencia
+Alumno: Juan Perez
+Asignatura: Matemática
+Fecha de la clase: 13-07-2026
+Estado: Ausente (A)
+
+Este mensaje se generó automáticamente al registrar la asistencia de la clase.
+</code></pre>
+<h3>Ejemplo de aviso (evaluación)</h3>
+<pre><code>Aviso de evaluación
+Alumno: Juan Perez
+Curso: 1° Medio A
+Asignatura: Matemática
+Evaluación: Prueba unidad 2
+Tipo: PRUEBA
+Fecha: 15-07-2026
+
+Este mensaje se generó automáticamente al publicar una nueva evaluación.
+</code></pre>
+<h3>Por qué es innovadora</h3>
+<ol>
+<li>Ciclo docente → familia en segundos  </li>
+<li>Misma plataforma (mensajería TG)  </li>
+<li>Resiliencia (core no depende del canal)  </li>
+<li>Trazabilidad en la conversación  </li>
+<li>UX segura con confirmación  </li>
+<li>Coherente con microservicios: attendance <strong>delega</strong> en academic</li>
+</ol>
+<h3>Código clave</h3>
+<table>
+<thead>
+<tr>
+<th>Área</th>
+<th>Ubicación</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Cliente notify</td>
+<td><code>AcademicApiClient.notifyGuardianAttendance</code></td>
+</tr>
+<tr>
+<td>API</td>
+<td><code>POST /messages/attendance-notify</code></td>
+</tr>
+<tr>
+<td>Lógica TG</td>
+<td><code>MessageServiceImpl</code></td>
+</tr>
+<tr>
+<td>Evaluaciones</td>
+<td><code>EvaluationController</code> → <code>notifyGuardiansEvaluationCreated</code></td>
+</tr>
+<tr>
+<td>UI</td>
+<td><code>ConfirmDialog.tsx</code>, <code>Attendance.tsx</code>, <code>Evaluations.tsx</code></td>
+</tr>
+</tbody></table>
+<h3>Demo (2–3 min)</h3>
+<ol>
+<li><code>prof_castillo</code> → Asistencia → confirmar → guardar  </li>
+<li><code>apoderado_demo</code> → Mensajes → ver aviso  </li>
+<li>Docente → crear evaluación → confirmar  </li>
+<li>Apoderado → ver aviso de evaluación</li>
+</ol>
+<h2>4. Otras mejoras post-EP3</h2>
+<ul>
+<li>Mensajería por roles (AD, AG, AS, <strong>TG</strong>, TS); Distinción Dirección / Oficina  </li>
+<li>Nota final: prom. semestre (CONTROL/PRUEBA/TRABAJO) + % colegio + examen; export Excel/PDF  </li>
+<li>Asistencia tipo planilla; clases y sustitutos; confirmaciones al guardar  </li>
+<li>Contexto docente por curso; vínculo ficha ↔ usuario auth</li>
+</ul>
+<h2>5. Impacto técnico</h2>
+<table>
+<thead>
+<tr>
+<th>Aspecto</th>
+<th>EP3</th>
+<th>Examen</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Familia</td>
+<td>Consulta portal</td>
+<td>Mensajes + alertas automáticas</td>
+</tr>
+<tr>
+<td>academic</td>
+<td>CRUD</td>
+<td>+ MessageService + notify</td>
+</tr>
+<tr>
+<td>attendance</td>
+<td>Sesiones/registros</td>
+<td>+ REST a academic al guardar lista</td>
+</tr>
+<tr>
+<td>Frontend</td>
+<td>CRUD por rol</td>
+<td>Mensajes, ConfirmDialog, exports</td>
+</tr>
+<tr>
+<td>Persistencia</td>
+<td>3 BD</td>
+<td>Sin 4.ª BD; mensajes en academic</td>
+</tr>
+</tbody></table>
+<hr>
+<h1>Conclusión general</h1>
+<p>La plataforma cumple el encargo de Fullstack III con <strong>microservicios</strong>, <strong>persistencia independiente</strong>, <strong>API vía gateway</strong>, <strong>pruebas con métricas</strong> y repositorios publicados. Para el examen, sobre esa base se incorporó el feedback de la presentación N°3 y una <strong>mejora innovadora concreta</strong>: alertas inmediatas a apoderados al pasar lista y al publicar evaluaciones, integradas en la mensajería del colegio, con confirmación en UI y diseño resiliente entre servicios.</p>
+</body>
+</html>
